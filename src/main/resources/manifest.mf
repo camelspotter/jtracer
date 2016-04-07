@@ -1,0 +1,11 @@
+Name: jTracer
+Manifest-Version: 1.0
+Specification-Version: 1.0
+Implementation-Version: 1.0.4
+Specification-Title: jTracer Stack Trace Visualization Tool
+Implementation-Title: jTracer
+Specification-Vendor: Tasos Parisinos
+Implementation-Vendor: Tasos Parisinos
+Main-Class: net.libcsdbg.jtracer.core.ApplicationCore
+Sealed: true
+SplashScreen-Image: ${project.build.outputDirectory}/theme/common/splash.png
