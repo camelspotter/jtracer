@@ -1,5 +1,7 @@
 package net.libcsdbg.jtracer.service.log;
 
+import net.libcsdbg.jtracer.annotation.MixinNote;
+import net.libcsdbg.jtracer.annotation.Mutable;
 import net.libcsdbg.jtracer.core.ApplicationCore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +15,9 @@ import org.qi4j.api.service.ServiceReference;
 @Activators(LoggerService.Activator.class)
 public interface LoggerService extends LoggerServiceApi, ServiceComposite
 {
-	abstract class Mixin implements LoggerService
+	@Mutable
+	@MixinNote("The default service implementation uses log4j2")
+	public abstract class Mixin implements LoggerService
 	{
 		protected Logger rootLogger;
 
@@ -168,6 +172,7 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 	}
 
 
+	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<LoggerService>>
 	{
 		@Override

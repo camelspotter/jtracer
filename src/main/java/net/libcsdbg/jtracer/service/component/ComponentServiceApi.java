@@ -14,6 +14,12 @@ public interface ComponentServiceApi extends ComponentServiceState
 
 	Font getFont(String widget);
 
+	String getFontName(String widget);
+
+	Integer getFontSize(String widget);
+
+	Integer getFontStyles(String widget);
+
 	Color getForegroundColor(String widget);
 
 	GridPresets getGridPresets(String widget);

@@ -1,12 +1,18 @@
 package net.libcsdbg.jtracer.service.log.mock;
 
+import net.libcsdbg.jtracer.annotation.MixinNote;
+import net.libcsdbg.jtracer.annotation.Mutable;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 
 import java.io.PrintStream;
 
+@Mutable
+@MixinNote("This is a mock service implementation, it logs on console with a simple format")
 public abstract class MockLoggerService implements LoggerService
 {
-	protected PrintStream stream;
+	protected PrintStream logSink;
+
+	protected PrintStream errorSink;
 
 
 	@Override
@@ -16,7 +22,8 @@ public abstract class MockLoggerService implements LoggerService
 			return this;
 		}
 
-		stream = System.out;
+		logSink = System.out;
+		errorSink = System.err;
 
 		metainfo().set("mock");
 		mute().set(false);
@@ -29,8 +36,8 @@ public abstract class MockLoggerService implements LoggerService
 	public LoggerService catching(Class<?> clazz, Throwable err)
 	{
 		if (!mute().get()) {
-			stream.println(clazz.getName() + ": ");
-			err.printStackTrace(stream);
+			errorSink.println(clazz.getName() + ": ");
+			err.printStackTrace(errorSink);
 		}
 
 		return this;
@@ -40,7 +47,7 @@ public abstract class MockLoggerService implements LoggerService
 	public LoggerService debug(Class<?> clazz, String record)
 	{
 		if (!mute().get()) {
-			stream.println("[DEBUG] " + clazz.getName() + ": " + record);
+			logSink.println("[DEBUG] " + clazz.getName() + ": " + record);
 		}
 
 		return this;
@@ -50,7 +57,7 @@ public abstract class MockLoggerService implements LoggerService
 	public LoggerService error(Class<?> clazz, String record)
 	{
 		if (!mute().get()) {
-			stream.println("[ERROR] " + clazz.getName() + ": " + record);
+			errorSink.println("[ERROR] " + clazz.getName() + ": " + record);
 		}
 
 		return this;
@@ -60,7 +67,7 @@ public abstract class MockLoggerService implements LoggerService
 	public LoggerService fatal(Class<?> clazz, String record)
 	{
 		if (!mute().get()) {
-			stream.println("[FATAL] " + clazz.getName() + ": " + record);
+			errorSink.println("[FATAL] " + clazz.getName() + ": " + record);
 		}
 
 		return this;
@@ -70,7 +77,7 @@ public abstract class MockLoggerService implements LoggerService
 	public LoggerService info(Class<?> clazz, String record)
 	{
 		if (!mute().get()) {
-			stream.println("[INFO] " + clazz.getName() + ": " + record);
+			logSink.println("[INFO] " + clazz.getName() + ": " + record);
 		}
 
 		return this;
@@ -85,7 +92,7 @@ public abstract class MockLoggerService implements LoggerService
 
 		info(getClass(), "Service '" + identity().get() + "' passivated (" + metainfo().get() + ")");
 		active().set(false);
-		stream = null;
+		logSink = errorSink = null;
 
 		return this;
 	}
@@ -94,7 +101,7 @@ public abstract class MockLoggerService implements LoggerService
 	public LoggerService trace(Class<?> clazz, String record)
 	{
 		if (!mute().get()) {
-			stream.println("[TRACE] " + clazz.getName() + ": " + record);
+			logSink.println("[TRACE] " + clazz.getName() + ": " + record);
 		}
 
 		return this;
@@ -104,7 +111,7 @@ public abstract class MockLoggerService implements LoggerService
 	public LoggerService warning(Class<?> clazz, String record)
 	{
 		if (!mute().get()) {
-			stream.println("[WARN] " + clazz.getName() + ": " + record);
+			logSink.println("[WARN] " + clazz.getName() + ": " + record);
 		}
 
 		return this;

@@ -1,6 +1,6 @@
 package net.libcsdbg.jtracer.service.utility;
 
-import net.libcsdbg.jtracer.core.ApplicationCore;
+import net.libcsdbg.jtracer.annotation.Mutable;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.registry.RegistryService;
 import org.qi4j.api.activation.ActivatorAdapter;
@@ -16,14 +16,17 @@ import java.awt.*;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+/* todo Revisit for OS portability */
 
 @Mixins(UtilityService.Mixin.class)
 @Activators(UtilityService.Activator.class)
 public interface UtilityService extends UtilityServiceApi, ServiceComposite
 {
-	abstract class Mixin implements UtilityService
+	@Mutable
+	public abstract class Mixin implements UtilityService
 	{
 		@Service
 		protected LoggerService loggerSvc;
@@ -47,13 +50,18 @@ public interface UtilityService extends UtilityServiceApi, ServiceComposite
 		}
 
 		@Override
-		public UtilityService browse(URL url)
+		public Process browse(URL url)
 		{
 			try {
 				String browser = registrySvc.get("browser");
-				ProcessBuilder proc = new ProcessBuilder(browser, url.toString());
-				proc.start();
-				return this;
+				if (browser == null) {
+					throw new RuntimeException("No browser configuration found");
+				}
+
+				return
+					new ProcessBuilder().inheritIO()
+					                    .command(browser.trim(), url.toString())
+					                    .start();
 			}
 			catch (RuntimeException err) {
 				throw err;
@@ -67,11 +75,11 @@ public interface UtilityService extends UtilityServiceApi, ServiceComposite
 		public Process execute(String workingDir, String executable, Boolean async, String... args)
 		{
 			try {
-				String commandLine = workingDir + File.separator + executable + " " + String.join(" ", args);
-
 				List<String> cmd = new ArrayList<>();
 				cmd.add("." + File.separator + executable);
-				cmd.addAll(Arrays.asList(args));
+				if (args.length > 0) {
+					Collections.addAll(cmd, args);
+				}
 
 				Process proc =
 					new ProcessBuilder().inheritIO()
@@ -103,83 +111,16 @@ public interface UtilityService extends UtilityServiceApi, ServiceComposite
 		@Override
 		public File getHomeDirectory()
 		{
-			try {
-				File retval =
-					FileSystemView.getFileSystemView()
-					              .getHomeDirectory();
-
-				if (!retval.isDirectory()) {
-					throw new RuntimeException("The user home directory '" + retval.getCanonicalPath() + "' doesn't exist");
-				}
-				else if (!retval.canRead() || !retval.canExecute()) {
-					throw new RuntimeException("Can't access the user home directory '" + retval.getCanonicalPath() + "'");
-				}
-
-				return retval;
-			}
-			catch (RuntimeException err) {
-				throw err;
-			}
-			catch (Throwable err) {
-				throw new RuntimeException(err);
-			}
-		}
-
-		@Override
-		public String getOperatingSystem()
-		{
-			String os = System.getProperty("os.name");
-			if (os == null) {
-				return "undefined";
-			}
-
-			return os.trim().toLowerCase();
-		}
-
-		@Override
-		public File getPrefix()
-		{
-			boolean isDevelopment =
-				ApplicationCore.getCurrentApplicationCore()
-				               .getApplicationProperties()
-				               .isDevelopmentBuild();
-
-			try {
-				File retval;
-				if (isDevelopment) {
-					retval = new File(registrySvc.get("buildPrefix"));
-				}
-				else if (isLinux()) {
-					retval = new File(getHomeDirectory(), ".jTracer");
-				}
-				else {
-					retval = new File("C:\\Program Files\\jTracer");
-				}
-
-				if (!retval.isDirectory()) {
-					throw new RuntimeException("The installation directory '" + retval.getCanonicalPath() + "' doesn't exist");
-				}
-				else if (!retval.canRead() || !retval.canExecute()) {
-					throw new RuntimeException("Can't access the installation directory '" + retval.getCanonicalPath() + "'");
-				}
-
-				return retval;
-			}
-			catch (RuntimeException err) {
-				throw err;
-			}
-			catch (Throwable err) {
-				throw new RuntimeException(err);
-			}
+			return FileSystemView.getFileSystemView().getHomeDirectory();
 		}
 
 		@Override
 		public List<Image> getProjectIcons()
 		{
-			List<Image> retval = new ArrayList<>();
+			List<Image> retval = new ArrayList<>(Config.iconSizes.length);
 
-			for (int i = 16; i <= 128; i *= 2) {
-				ImageIcon icon = loadIcon("icon" + i + ".png");
+			for (Integer size : Config.iconSizes) {
+				ImageIcon icon = loadIcon("icon" + size + ".png");
 				if (icon != null) {
 					retval.add(icon.getImage());
 				}
@@ -191,40 +132,28 @@ public interface UtilityService extends UtilityServiceApi, ServiceComposite
 		@Override
 		public File getResource(String path)
 		{
-			if (isUnixLike()) {
-				return new File(getPrefix(), path);
+			if (!File.separator.equals("/")) {
+				path = path.replace("/", File.separator);
 			}
 
-			path = path.replace("/", File.separator);
-			return new File(getPrefix(), path);
+			return new File(getResourcePrefix(), path);
 		}
 
 		@Override
-		public Boolean isLinux()
+		public File getResourcePrefix()
 		{
-			return getOperatingSystem().matches("linux");
-		}
-
-		@Override
-		public Boolean isUnixLike()
-		{
-			return isLinux() || File.separator.equals("/");
-		}
-
-		@Override
-		public ImageIcon loadIcon(String name)
-		{
-			/* todo Use 'current' link */
 			try {
-				File f;
-				if (isLinux()) {
-					f = getResource("theme/default/icons/" + name);
-				}
-				else {
-					f = getResource("theme/default/icons/" + name);
+				File retval =
+					new File(getClass().getProtectionDomain()
+					                   .getCodeSource()
+					                   .getLocation()
+					                   .toURI());
+
+				if (retval.isDirectory()) {
+					return retval;
 				}
 
-				return new ImageIcon(f.getCanonicalPath());
+				return retval.getParentFile();
 			}
 			catch (RuntimeException err) {
 				throw err;
@@ -235,13 +164,41 @@ public interface UtilityService extends UtilityServiceApi, ServiceComposite
 		}
 
 		@Override
-		public UtilityService mail(URL url)
+		public ImageIcon loadIcon(String name)
+		{
+			try {
+				String iconPath = registrySvc.get("theme");
+				if (iconPath == null) {
+					iconPath = "theme/default/icons/";
+				}
+				else {
+					iconPath = "theme/" + iconPath.trim() + "/icons/";
+				}
+
+				iconPath = getResource(iconPath + name).getCanonicalPath();
+				return new ImageIcon(iconPath);
+			}
+			catch (RuntimeException err) {
+				throw err;
+			}
+			catch (Throwable err) {
+				throw new RuntimeException(err);
+			}
+		}
+
+		@Override
+		public Process mailTo(URL url)
 		{
 			try {
 				String mailer = registrySvc.get("mailer");
-				ProcessBuilder proc = new ProcessBuilder(mailer, url.toString());
-				proc.start();
-				return this;
+				if (mailer == null) {
+					throw new RuntimeException("No mailer configuration found");
+				}
+
+				return
+					new ProcessBuilder().inheritIO()
+					                    .command(mailer.trim(), url.toString())
+					                    .start();
 			}
 			catch (RuntimeException err) {
 				throw err;
@@ -263,9 +220,16 @@ public interface UtilityService extends UtilityServiceApi, ServiceComposite
 			loggerSvc.info(getClass(), "Service '" + identity().get() + "' passivated (" + metainfo().get() + ")");
 			return this;
 		}
+
+
+		public static class Config
+		{
+			public static Integer[] iconSizes = { 16, 24, 32, 48, 64, 128 };
+		}
 	}
 
 
+	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<UtilityService>>
 	{
 		@Override

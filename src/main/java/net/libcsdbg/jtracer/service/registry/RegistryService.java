@@ -1,8 +1,10 @@
 package net.libcsdbg.jtracer.service.registry;
 
+import net.libcsdbg.jtracer.annotation.MixinNote;
+import net.libcsdbg.jtracer.annotation.Mutable;
 import net.libcsdbg.jtracer.core.ApplicationCore;
-import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.core.ApplicationProperties;
+import net.libcsdbg.jtracer.service.log.LoggerService;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
 import org.qi4j.api.injection.scope.Service;
@@ -14,13 +16,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Mixins(RegistryService.Mixin.class)
 @Activators(RegistryService.Activator.class)
 public interface RegistryService extends RegistryServiceApi, ServiceComposite
 {
-	abstract class Mixin implements RegistryService
+	@Mutable
+	@MixinNote("The default service implementation is based on java.util")
+	public abstract class Mixin implements RegistryService
 	{
 		@Service
 		protected LoggerService loggerSvc;
@@ -45,7 +48,7 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 			state().set(map);
 			source().set(properties.getSource());
 
-			metainfo().set("net.libcsdbg.jracer");
+			metainfo().set("java.util");
 			active().set(true);
 
 			loggerSvc.info(getClass(), "Service '" + identity().get() + "' activated (" + metainfo().get() + ")");
@@ -55,47 +58,36 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 		@Override
 		public RegistryService clear()
 		{
-			state().get()
-			       .clear();
-
+			map().clear();
 			return this;
 		}
 
 		@Override
 		public Boolean containsKey(String key)
 		{
-			return
-				state().get()
-				       .containsKey(key);
+			return map().containsKey(key);
 		}
 
 		@Override
 		public Boolean containsValue(String value)
 		{
-			return
-				state().get()
-				       .containsValue(value);
+			return map().containsValue(value);
 		}
 
 		@Override
 		public Set<Map.Entry<String, String>> entrySet()
 		{
-			return
-				state().get()
-				       .entrySet();
+			return map().entrySet();
 		}
 
 		@Override
 		public Map<String, String> find(String keyPattern)
 		{
-			Set<String> keys =
-				keySet().stream()
-				        .filter(k -> k.matches(keyPattern))
-				        .collect(Collectors.toSet());
+			Map<String, String> retval = new HashMap<>();
 
-			Map<String, String> retval = new HashMap<>(keys.size());
-			keys.stream()
-			    .forEach(k -> retval.put(k, get(k)));
+			keySet().stream()
+			        .filter(k -> k.matches(keyPattern))
+			        .forEach(k -> retval.put(k, get(k)));
 
 			return retval;
 		}
@@ -103,25 +95,19 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 		@Override
 		public String get(String key)
 		{
-			return
-				state().get()
-				       .get(key);
+			return map().get(key);
 		}
 
 		@Override
 		public String getOrDefault(String key, String defaultValue)
 		{
-			return
-				state().get()
-				       .getOrDefault(key, defaultValue);
+			return map().getOrDefault(key, defaultValue);
 		}
 
 		@Override
 		public Boolean isEmpty()
 		{
-			return
-				state().get()
-				       .isEmpty();
+			return map().isEmpty();
 		}
 
 		@Override
@@ -132,16 +118,23 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 				return false;
 			}
 
-			value = value.toLowerCase().trim();
-			return value.equals("true") || value.equals("yes") || value.equals("on");
+			value = value.trim().toLowerCase();
+			return
+				value.equals("true") ||
+				value.equals("yes") ||
+				value.equals("on") ||
+				value.equals("1");
 		}
 
 		@Override
 		public Set<String> keySet()
 		{
-			return
-				state().get()
-				       .keySet();
+			return map().keySet();
+		}
+
+		protected Map<String, String> map()
+		{
+			return state().get();
 		}
 
 		@Override
@@ -162,76 +155,61 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 		@Override
 		public String put(String key, String value)
 		{
-			return
-				state().get()
-				       .put(key, value);
+			return map().put(key, value);
 		}
 
 		@Override
-		public RegistryService putAll(Map<String, String> map)
+		public RegistryService putAll(Map<String, String> data)
 		{
-			state().get()
-			       .putAll(map);
-
+			map().putAll(data);
 			return this;
 		}
 
 		@Override
 		public String putIfAbsent(String key, String value)
 		{
-			return
-				state().get()
-				       .putIfAbsent(key, value);
+			return map().putIfAbsent(key, value);
 		}
 
 		@Override
 		public String remove(String key)
 		{
-			return
-				state().get()
-				       .remove(key);
+			return map().remove(key);
 		}
 
 		@Override
 		public Boolean remove(String key, String value)
 		{
-			return
-				state().get()
-				       .remove(key, value);
+			return map().remove(key, value);
 		}
 
 		@Override
 		public String replace(String key, String value)
 		{
-			return
-				state().get()
-				       .replace(key, value);
+			return map().replace(key, value);
 		}
 
 		@Override
 		public Boolean replace(String key, String oldValue, String newValue)
 		{
-			return
-				state().get()
-				       .replace(key, oldValue, newValue);
+			return map().replace(key, oldValue, newValue);
 		}
 
 		@Override
 		public Integer size()
 		{
-			return
-				state().get()
-				       .size();
+			return map().size();
 		}
 
 		@Override
 		public Set<String> values()
 		{
-			return new HashSet<>(state().get().values());
+			return new HashSet<>(map().values());
 		}
 	}
 
 
+	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<RegistryService>>
 	{
 		@Override

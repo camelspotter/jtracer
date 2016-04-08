@@ -27,7 +27,7 @@
             </plugin>
 
             <!-- Used to configure jar artifacts -->
-            <plugin>
+            <!-- plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.3.2</version>
@@ -38,7 +38,7 @@
                         <manifestFile>src/main/resources/manifest.mf</manifestFile>
                     </archive>
                 </configuration>
-            </plugin>
+            </plugin-->
         </plugins>
 
         <resources>
@@ -62,20 +62,6 @@
     </repositories>
 
     <dependencies>
-        <!-- Generic -->
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>${guice.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>${reflections.version}</version>
-        </dependency>
-
-
         <!-- Logging facade and bindings -->
 
         <dependency>
@@ -121,7 +107,6 @@
             <groupId>org.qi4j.core</groupId>
             <artifactId>org.qi4j.core.runtime</artifactId>
             <version>${qi.version}</version>
-            <scope>runtime</scope>
         </dependency>
 
 
@@ -144,10 +129,6 @@
     </dependencies>
 
     <properties>
-        <!-- Generic -->
-        <guice.version>4.0</guice.version>
-        <reflections.version>0.9.10</reflections.version>
-
         <!-- Logging facade and bindings -->
         <log4j1.version>1.2.17</log4j1.version>
         <log4j2.version>2.1</log4j2.version>

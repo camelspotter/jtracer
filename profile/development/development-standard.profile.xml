@@ -10,7 +10,6 @@
         <profileName>development-standard</profileName>
         <version>${project.version}</version>
         <artifact>${project.artifactId}</artifact>
-        <buildDescription>${project.build}</buildDescription>
 
         <!-- Log4j log levels (for third party) -->
         <log4j.thirdParty.level.full>info</log4j.thirdParty.level.full>

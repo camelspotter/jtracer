@@ -10,27 +10,21 @@ public interface UtilityServiceApi extends UtilityServiceState
 {
 	UtilityService activate();
 
-	UtilityService browse(URL url);
+	Process browse(URL url);
 
 	Process execute(String workingDir, String executable, Boolean async, String... args);
 
 	File getHomeDirectory();
 
-	String getOperatingSystem();
-
-	File getPrefix();
-
 	List<Image> getProjectIcons();
 
 	File getResource(String path);
 
-	Boolean isLinux();
-
-	Boolean isUnixLike();
+	File getResourcePrefix();
 
 	ImageIcon loadIcon(String name);
 
-	UtilityService mail(URL url);
+	Process mailTo(URL url);
 
 	UtilityService passivate();
 }

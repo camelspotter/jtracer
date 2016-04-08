@@ -1,5 +1,7 @@
 package net.libcsdbg.jtracer.service.parser;
 
+import net.libcsdbg.jtracer.annotation.Mutable;
+import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.utility.UtilityService;
 import org.qi4j.api.activation.ActivatorAdapter;
@@ -11,6 +13,7 @@ import org.qi4j.api.service.ServiceReference;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +23,8 @@ import java.util.List;
 @Activators(ParserService.Activator.class)
 public interface ParserService extends ParserServiceApi, ServiceComposite
 {
-	abstract class Mixin implements ParserService
+	@Mutable
+	public abstract class Mixin implements ParserService
 	{
 		@Service
 		protected LoggerService loggerSvc;
@@ -49,22 +53,33 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 			return this;
 		}
 
+		protected BufferedReader getDictionaryReader(String name) throws FileNotFoundException
+		{
+			File src = utilitySvc.getResource("dictionary/" + name + ".dict");
+
+			if (!src.exists()) {
+				throw new RuntimeException("Dictionary '" + src.getAbsolutePath() + "' doesn't exist");
+			}
+
+			if (!src.isFile()) {
+				throw new RuntimeException("Path '" + src.getAbsolutePath() + "' is not a dictionary file");
+			}
+
+			if (!src.canRead()) {
+				throw new RuntimeException("Dictionary '" + src.getAbsolutePath() + "' is not readable");
+			}
+
+			return new BufferedReader(new FileReader(src));
+		}
+
+		@Note("Using the same name will overwrite older dictionary data stored under that name")
 		@Override
 		public ParserService loadDictionary(String name)
 		{
 			try {
-				File src = utilitySvc.getResource("config/" + name + ".dict");
+				BufferedReader reader = getDictionaryReader(name);
 
-				if (!src.isFile()) {
-					throw new RuntimeException("Dictionary '" + src.getCanonicalPath() + "' doesn't exist");
-				}
-				else if (!src.canRead()) {
-					throw new RuntimeException("Can't read dictionary '" + src.getCanonicalPath() + "'");
-				}
-
-				BufferedReader reader = new BufferedReader(new FileReader(src));
 				List<String> words = new ArrayList<>();
-
 				while (true) {
 					String line = reader.readLine();
 					if (line == null) {
@@ -127,7 +142,10 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 			       .values()
 			       .forEach(List::clear);
 
-			state().get().clear();
+			state().get()
+			       .clear();
+
+			state().set(null);
 			active().set(false);
 
 			loggerSvc.info(getClass(), "Service '" + identity().get() + "' passivated (" + metainfo().get() + ")");
@@ -136,6 +154,7 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 	}
 
 
+	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<ParserService>>
 	{
 		@Override

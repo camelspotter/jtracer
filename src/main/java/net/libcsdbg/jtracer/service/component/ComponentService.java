@@ -1,5 +1,8 @@
 package net.libcsdbg.jtracer.service.component;
 
+import net.libcsdbg.jtracer.annotation.Factory;
+import net.libcsdbg.jtracer.annotation.MixinNote;
+import net.libcsdbg.jtracer.annotation.Mutable;
 import net.libcsdbg.jtracer.service.component.value.GridPresets;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.registry.RegistryService;
@@ -22,7 +25,9 @@ import java.util.stream.Collectors;
 @Activators(ComponentService.Activator.class)
 public interface ComponentService extends ComponentServiceApi, ServiceComposite
 {
-	abstract class Mixin implements ComponentService
+	@Mutable
+	@MixinNote("The default service implementation uses AWT")
+	public abstract class Mixin implements ComponentService
 	{
 		@Structure
 		protected Module selfContainer;
@@ -41,7 +46,7 @@ public interface ComponentService extends ComponentServiceApi, ServiceComposite
 				return this;
 			}
 
-			metainfo().set("javax.swing");
+			metainfo().set("java.awt");
 			active().set(true);
 
 			loggerSvc.info(getClass(), "Service '" + identity().get() + "' activated (" + metainfo().get() + ")");
@@ -51,22 +56,22 @@ public interface ComponentService extends ComponentServiceApi, ServiceComposite
 		@Override
 		public Color getBackgroundColor(String widget)
 		{
-			String param = registrySvc.get(widget + "-bgcolor");
+			String key = widget + "-bgcolor";
+			String param = registrySvc.get(key);
 			if (param == null) {
-				return Color.lightGray;
+				throw new RuntimeException("No configuration found for key '" + key + "'");
 			}
 
-			return Color.decode(param);
+			return Color.decode(param.trim());
 		}
 
 		@Override
 		public Dimension getDimension(String widget)
 		{
-			Dimension retval = new Dimension(640, 480);
-
-			String param = registrySvc.get(widget + "-size");
+			String key = widget + "-size";
+			String param = registrySvc.get(key);
 			if (param == null) {
-				return retval;
+				throw new RuntimeException("No configuration found for key '" + key + "'");
 			}
 
 			String[] parts = param.split(",");
@@ -77,59 +82,94 @@ public interface ComponentService extends ComponentServiceApi, ServiceComposite
 				      .map(Integer::parseInt)
 				      .collect(Collectors.toList());
 
-			retval.width = axes.get(0);
-			retval.height = axes.get(1);
-			return retval;
+			return new Dimension(axes.get(0), axes.get(1));
 		}
 
+		@SuppressWarnings("MagicConstant")
 		@Override
 		public Font getFont(String widget)
 		{
-			String name = registrySvc.get(widget + "-font");
-			String type = registrySvc.get(widget + "-font-type");
-			String size = registrySvc.get(widget + "-font-size");
+			return new Font(getFontName(widget), getFontStyles(widget), getFontSize(widget));
+		}
 
-			if (name == null) {
-				name = "Dialog";
+		@Override
+		public String getFontName(String widget)
+		{
+			String key = widget + "-font";
+			String param = registrySvc.get(key);
+			if (param == null) {
+				throw new RuntimeException("No configuration found for key '" + key + "'");
 			}
 
-			int fontType = Font.PLAIN;
-			if (type != null) {
-				type = type.toLowerCase();
+			return param.trim();
+		}
 
-				if (type.equals("bold")) {
-					fontType = Font.BOLD;
+		@Override
+		public Integer getFontSize(String widget)
+		{
+			String key = widget + "-font-size";
+			String param = registrySvc.get(key);
+			if (param == null) {
+				throw new RuntimeException("No configuration found for key '" + key + "'");
+			}
+
+			return Integer.parseInt(param.trim());
+		}
+
+		@Override
+		public Integer getFontStyles(String widget)
+		{
+			String key = widget + "-font-type";
+			String param = registrySvc.get(key);
+			if (param == null) {
+				throw new RuntimeException("No configuration found for key '" + key + "'");
+			}
+
+			int retval = 0;
+			for (String style : param.split(",")) {
+				style = style.trim().toLowerCase();
+
+				switch (style) {
+				case "plain":
+					retval |= Font.PLAIN;
+					break;
+
+				case "bold":
+					retval |= Font.BOLD;
+					break;
+
+				case "italic":
+					retval |= Font.ITALIC;
+					break;
+
+				default:
+					loggerSvc.warning(getClass(), "Unknown font style '" + style + "' for key '" + key + "'");
 				}
-				else if (type.equals("italic")) {
-					fontType = Font.ITALIC;
-				}
 			}
 
-			int fontSize = 12;
-			if (size != null) {
-				fontSize = Integer.parseInt(size);
-			}
-
-			return new Font(name, fontType, fontSize);
+			return retval;
 		}
 
 		@Override
 		public Color getForegroundColor(String widget)
 		{
-			String param = registrySvc.get(widget + "-fgcolor");
+			String key = widget + "-fgcolor";
+			String param = registrySvc.get(key);
 			if (param == null) {
-				return Color.black;
+				throw new RuntimeException("No configuration found for key '" + key + "'");
 			}
 
-			return Color.decode(param);
+			return Color.decode(param.trim());
 		}
 
+		@Factory
 		@Override
 		public GridPresets getGridPresets(String widget)
 		{
-			String param = registrySvc.get(widget + "-grid-presets");
+			String key = widget + "-grid-presets";
+			String param = registrySvc.get(key);
 			if (param == null) {
-				return selfContainer.newValue(GridPresets.class);
+				throw new RuntimeException("No configuration found for key '" + key + "'");
 			}
 
 			String[] parts = param.split(",");
@@ -164,11 +204,10 @@ public interface ComponentService extends ComponentServiceApi, ServiceComposite
 		@Override
 		public Insets getInsets(String widget)
 		{
-			Insets retval = new Insets(0, 0, 0, 0);
-
-			String param = registrySvc.get(widget + "-insets");
+			String key = widget + "-insets";
+			String param = registrySvc.get(key);
 			if (param == null) {
-				return retval;
+				throw new RuntimeException("No configuration found for key '" + key + "'");
 			}
 
 			String[] parts = param.split(",");
@@ -179,11 +218,11 @@ public interface ComponentService extends ComponentServiceApi, ServiceComposite
 				      .map(Integer::parseInt)
 				      .collect(Collectors.toList());
 
-			retval.top = margins.get(0);
-			retval.left = margins.get(1);
-			retval.bottom = margins.get(2);
-			retval.right = margins.get(3);
-			return retval;
+			return
+				new Insets(margins.get(0),
+				           margins.get(1),
+				           margins.get(2),
+				           margins.get(3));
 		}
 
 		@Override
@@ -201,6 +240,7 @@ public interface ComponentService extends ComponentServiceApi, ServiceComposite
 	}
 
 
+	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<ComponentService>>
 	{
 		@Override

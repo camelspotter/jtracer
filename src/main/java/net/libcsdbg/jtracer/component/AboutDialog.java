@@ -50,13 +50,7 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 			viewer.setEditable(false);
 			viewer.setFocusable(false);
 			viewer.setMargin(new Insets(0, 0, 0, 0));
-
-			if (utilitySvc.isLinux()) {
-				viewer.setPreferredSize(new Dimension(360, 396));
-			}
-			else {
-				viewer.setPreferredSize(new Dimension(360, 406));
-			}
+			viewer.setPreferredSize(new Dimension(360, 406));
 
 			viewer.addHyperlinkListener(this);
 			add(viewer, BorderLayout.CENTER);
@@ -93,7 +87,7 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 				break;
 
 			case "mailto":
-				utilitySvc.mail(url);
+				utilitySvc.mailTo(url);
 				break;
 
 			case "http":
