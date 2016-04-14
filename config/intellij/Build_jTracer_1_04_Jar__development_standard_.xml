@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Install jTracer Jar (development-standard)" type="MavenRunConfiguration" factoryName="Maven" singleton="true">
+  <configuration default="false" name="Build jTracer-1.04 Jar (development-standard)" type="MavenRunConfiguration" factoryName="Maven" singleton="true">
     <MavenSettings>
       <option name="myGeneralSettings" />
       <option name="myRunnerSettings" />
@@ -11,7 +11,8 @@
           <option name="goals">
             <list>
               <option value="-e" />
-              <option value="install" />
+              <option value="clean" />
+              <option value="package" />
             </list>
           </option>
           <option name="profilesMap">
@@ -26,6 +27,8 @@
     </MavenSettings>
     <RunnerSettings RunnerId="Run" />
     <ConfigurationWrapper RunnerId="Run" />
-    <method />
+    <method>
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Pom Assembler" run_configuration_type="JarApplication" />
+    </method>
   </configuration>
 </component>

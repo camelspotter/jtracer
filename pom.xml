@@ -1,0 +1,163 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.libcsdbg</groupId>
+    <artifactId>jTracer</artifactId>
+    <version>1.04</version>
+
+    <name>jTracer</name>
+    <packaging>jar</packaging>
+
+    <build>
+        <plugins>
+            <!-- Used to pass arguments to 'javac' -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <inherited>true</inherited>
+
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <compilerArgument>-Xlint:all</compilerArgument>
+                </configuration>
+            </plugin>
+
+            <!-- Used to configure jar artifacts -->
+            <!-- plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3.2</version>
+                <inherited>false</inherited>
+
+                <configuration>
+                    <archive>
+                        <manifestFile>src/main/resources/manifest.mf</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin-->
+        </plugins>
+
+        <resources>
+            <!-- Process resource files (based on the build profile) -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>qi4j-releases</id>
+            <url>https://repository-qi4j.forge.cloudbees.com/release/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!-- Logging facade and bindings -->
+
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${log4j1.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
+
+        <!-- Qi4j core -->
+
+        <dependency>
+            <groupId>org.qi4j.core</groupId>
+            <artifactId>org.qi4j.core.bootstrap</artifactId>
+            <version>${qi.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.qi4j.core</groupId>
+            <artifactId>org.qi4j.core.runtime</artifactId>
+            <version>${qi.version}</version>
+        </dependency>
+
+
+        <!-- Qi4j libraries -->
+
+        <!-- dependency>
+            <groupId>org.qi4j.library</groupId>
+            <artifactId>org.qi4j.library.constraints</artifactId>
+            <version>${qi.version}</version>
+        </dependency -->
+
+
+        <!-- Qi4j tools -->
+
+        <dependency>
+            <groupId>org.qi4j.tool</groupId>
+            <artifactId>org.qi4j.tool.envisage</artifactId>
+            <version>${qi.version}</version>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <!-- Logging facade and bindings -->
+        <log4j1.version>1.2.17</log4j1.version>
+        <log4j2.version>2.1</log4j2.version>
+        <slf4j.version>1.7.7</slf4j.version>
+
+        <!-- Qi4j core, extensions, libraries and tools -->
+        <qi.version>2.1</qi.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <profiles>
+		<profile>
+		    <id>development-standard</id>
+		
+		    <activation>
+		        <activeByDefault>true</activeByDefault>
+		    </activation>
+		
+		    <properties>
+		        <!-- Generic -->
+		        <profileId>development-standard</profileId>
+		
+		        <!-- Log4j log levels (for third party) -->
+		        <log4j.thirdParty.level.full>trace</log4j.thirdParty.level.full>
+		        <log4j.thirdParty.level.main>trace</log4j.thirdParty.level.main>
+		        <log4j.thirdParty.level.console>trace</log4j.thirdParty.level.console>
+		
+		        <!-- Log4j2 log levels (for jTracer) -->
+		        <log4j.level.full>trace</log4j.level.full>
+		        <log4j.level.main>trace</log4j.level.main>
+		        <log4j.level.console>trace</log4j.level.console>
+		    </properties>
+		</profile>
+    </profiles>
+</project>
