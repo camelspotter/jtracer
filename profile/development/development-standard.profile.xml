@@ -7,18 +7,16 @@
 
     <properties>
         <!-- Generic -->
-        <profileName>development-standard</profileName>
-        <version>${project.version}</version>
-        <artifact>${project.artifactId}</artifact>
+        <build.phase>development</build.phase>
 
         <!-- Log4j log levels (for third party) -->
-        <log4j.thirdParty.level.full>info</log4j.thirdParty.level.full>
-        <log4j.thirdParty.level.main>off</log4j.thirdParty.level.main>
-        <log4j.thirdParty.level.console>info</log4j.thirdParty.level.console>
+        <log4j.thirdParty.level.full>trace</log4j.thirdParty.level.full>
+        <log4j.thirdParty.level.main>trace</log4j.thirdParty.level.main>
+        <log4j.thirdParty.level.console>trace</log4j.thirdParty.level.console>
 
         <!-- Log4j2 log levels (for jTracer) -->
-        <log4j.level.full>debug</log4j.level.full>
-        <log4j.level.main>off</log4j.level.main>
-        <log4j.level.console>debug</log4j.level.console>
+        <log4j.level.full>trace</log4j.level.full>
+        <log4j.level.main>trace</log4j.level.main>
+        <log4j.level.console>trace</log4j.level.console>
     </properties>
 </profile>

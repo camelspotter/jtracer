@@ -1,11 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.libcsdbg</groupId>
     <artifactId>jTracer</artifactId>
-    <version>1.0.4</version>
+    <version>1.04</version>
 
     <name>jTracer</name>
     <packaging>jar</packaging>
@@ -54,10 +54,6 @@
         <repository>
             <id>qi4j-releases</id>
             <url>https://repository-qi4j.forge.cloudbees.com/release/</url>
-        </repository>
-        <repository>
-            <id>qi4j-snapshots</id>
-            <url>https://repository-qi4j.forge.cloudbees.com/snapshot/</url>
         </repository>
     </repositories>
 
@@ -112,11 +108,11 @@
 
         <!-- Qi4j libraries -->
 
-        <dependency>
+        <!-- dependency>
             <groupId>org.qi4j.library</groupId>
             <artifactId>org.qi4j.library.constraints</artifactId>
             <version>${qi.version}</version>
-        </dependency>
+        </dependency -->
 
 
         <!-- Qi4j tools -->
@@ -138,6 +134,10 @@
         <qi.version>2.1</qi.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <project.description>Stack Trace Visualization Tool</project.description>
+        <project.author>Tasos Parisinos</project.author>
+        <project.license>GNU General Public Licence v3</project.license>
     </properties>
 
     <profiles>

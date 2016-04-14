@@ -59,9 +59,9 @@ public class ApplicationProperties
 		return getProperty(Config.versionParam);
 	}
 
-	public String getProfile()
+	public String getBuildPhase()
 	{
-		return getProperty(Config.profileParam);
+		return getProperty(Config.buildPhaseParam);
 	}
 
 	public Properties getProperties()
@@ -101,14 +101,20 @@ public class ApplicationProperties
 
 	public Boolean isContinuousIntegrationBuild()
 	{
-		String profile = getProfile();
-		return profile != null && profile.matches(Config.ciProfilePattern);
+		String phase = getBuildPhase();
+		return phase != null &&
+		       phase.trim()
+		            .toLowerCase()
+		            .equals("ci");
 	}
 
 	public Boolean isDevelopmentBuild()
 	{
-		String profile = getProfile();
-		return profile != null && profile.matches(Config.developmentProfilePattern);
+		String phase = getBuildPhase();
+		return phase != null &&
+		       phase.trim()
+		            .toLowerCase()
+		            .equals("development");
 	}
 
 	public Boolean isEnabled(String property)
@@ -136,14 +142,20 @@ public class ApplicationProperties
 
 	public Boolean isReleaseBuild()
 	{
-		String profile = getProfile();
-		return profile != null && profile.matches(Config.releaseProfilePattern);
+		String phase = getBuildPhase();
+		return phase != null &&
+		       phase.trim()
+		            .toLowerCase()
+		            .equals("release");
 	}
 
 	public Boolean isTestBuild()
 	{
-		String profile = getProfile();
-		return profile != null && profile.matches(Config.testingProfilePattern);
+		String phase = getBuildPhase();
+		return phase != null &&
+		       phase.trim()
+		            .toLowerCase()
+		            .equals("testing");
 	}
 
 	public Integer size()
@@ -158,19 +170,8 @@ public class ApplicationProperties
 
 		public static String defaultSource = "jtracer.properties";
 
-		public static String profileParam = "profileName";
+		public static String buildPhaseParam = "buildPhase";
 
 		public static String versionParam = "version";
-
-
-		/* Profile name patterns */
-
-		public static String ciProfilePattern = "^ci\\-[a-zA-Z0-9]+$";
-
-		public static String developmentProfilePattern = "^development\\-[a-zA-Z0-9]+$";
-
-		public static String releaseProfilePattern = "^release\\-[a-zA-Z0-9]+$";
-
-		public static String testingProfilePattern = "^testing[0-9]+$";
 	}
 }

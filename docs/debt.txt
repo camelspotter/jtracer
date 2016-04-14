@@ -1,0 +1,1 @@
+todo Sanitize theme icons

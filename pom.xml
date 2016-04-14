@@ -134,6 +134,10 @@
         <qi.version>2.1</qi.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <project.description>Stack Trace Visualization Tool</project.description>
+        <project.author>Tasos Parisinos</project.author>
+        <project.license>GNU General Public Licence v3</project.license>
     </properties>
 
     <profiles>
@@ -146,7 +150,7 @@
 		
 		    <properties>
 		        <!-- Generic -->
-		        <profileId>development-standard</profileId>
+		        <build.phase>development</build.phase>
 		
 		        <!-- Log4j log levels (for third party) -->
 		        <log4j.thirdParty.level.full>trace</log4j.thirdParty.level.full>

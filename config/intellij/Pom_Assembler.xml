@@ -1,12 +1,12 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Pom Assembler" type="JarApplication" factoryName="JAR Application" singleton="true">
-    <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-    <option name="JAR_PATH" value="$PROJECT_DIR$/bin/pom-assembler-1.0.1.jar" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-    <envs />
-    <module name="jTracer-1.04" />
-    <RunnerSettings RunnerId="Basic" />
-    <ConfigurationWrapper RunnerId="Basic" />
-    <method />
-  </configuration>
+    <configuration default="false" name="Pom Assembler" type="JarApplication" factoryName="JAR Application" singleton="true">
+        <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea"/>
+        <option name="JAR_PATH" value="$PROJECT_DIR$/bin/pom-assembler-1.0.1.jar"/>
+        <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$"/>
+        <envs/>
+        <module name="jTracer-1.04"/>
+        <RunnerSettings RunnerId="Basic"/>
+        <ConfigurationWrapper RunnerId="Basic"/>
+        <method/>
+    </configuration>
 </component>
