@@ -1,4 +1,4 @@
-package net.libcsdbg.jtracer.service.utility;
+package net.libcsdbg.jtracer.service.util;
 
 import javax.swing.*;
 import java.awt.*;

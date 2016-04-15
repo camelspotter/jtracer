@@ -1,10 +1,10 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
-import net.libcsdbg.jtracer.service.component.ComponentService;
+import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.registry.RegistryService;
-import net.libcsdbg.jtracer.service.utility.UtilityService;
+import net.libcsdbg.jtracer.service.config.RegistryService;
+import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
@@ -270,6 +270,8 @@ public class MainFrame extends JFrame implements ActionListener,
 		GridBagConstraints bagConstraints = new GridBagConstraints();
 		JPanel inset = new JPanel(layout);
 
+		bagConstraints.gridy = 0;
+		bagConstraints.gridx = 0;
 		bagConstraints.weightx = 1;
 		bagConstraints.weighty = 1;
 		bagConstraints.fill = GridBagConstraints.BOTH;
@@ -278,6 +280,19 @@ public class MainFrame extends JFrame implements ActionListener,
 		layout.setConstraints(viewport, bagConstraints);
 		inset.add(viewport);
 		add(inset, BorderLayout.CENTER);
+
+		/* JTextArea console = new JTextArea("jTracer> ");
+		console.setForeground(Color.decode("0x76a6c7"));
+		nowrap = new JPanel(new BorderLayout());
+		nowrap.add(console);
+		viewport = new JScrollPane(nowrap);
+		viewport.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+		bagConstraints.weighty = 0.25;
+		bagConstraints.gridy++;
+
+		layout.setConstraints(viewport, bagConstraints);
+		inset.add(viewport); */
 
 		return this;
 	}

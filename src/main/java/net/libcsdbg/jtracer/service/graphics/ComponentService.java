@@ -1,11 +1,10 @@
-package net.libcsdbg.jtracer.service.component;
+package net.libcsdbg.jtracer.service.graphics;
 
 import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.MixinNote;
-import net.libcsdbg.jtracer.annotation.Mutable;
-import net.libcsdbg.jtracer.service.component.value.GridPresets;
+import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.registry.RegistryService;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
 import org.qi4j.api.injection.scope.Service;
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 @Activators(ComponentService.Activator.class)
 public interface ComponentService extends ComponentServiceApi, ServiceComposite
 {
-	@Mutable
 	@MixinNote("The default service implementation uses AWT")
 	public abstract class Mixin implements ComponentService
 	{
@@ -240,7 +238,6 @@ public interface ComponentService extends ComponentServiceApi, ServiceComposite
 	}
 
 
-	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<ComponentService>>
 	{
 		@Override

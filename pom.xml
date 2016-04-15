@@ -108,11 +108,11 @@
 
         <!-- Qi4j libraries -->
 
-        <!-- dependency>
+        <dependency>
             <groupId>org.qi4j.library</groupId>
             <artifactId>org.qi4j.library.constraints</artifactId>
             <version>${qi.version}</version>
-        </dependency -->
+        </dependency>
 
 
         <!-- Qi4j tools -->

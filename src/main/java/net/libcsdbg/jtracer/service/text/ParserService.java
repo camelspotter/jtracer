@@ -1,15 +1,19 @@
-package net.libcsdbg.jtracer.service.parser;
+package net.libcsdbg.jtracer.service.text;
 
-import net.libcsdbg.jtracer.annotation.Mutable;
+import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.utility.UtilityService;
+import net.libcsdbg.jtracer.service.text.parser.Tokenizer;
+import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
+import org.qi4j.api.composite.TransientBuilder;
 import org.qi4j.api.injection.scope.Service;
+import org.qi4j.api.injection.scope.Structure;
 import org.qi4j.api.mixin.Mixins;
 import org.qi4j.api.service.ServiceComposite;
 import org.qi4j.api.service.ServiceReference;
+import org.qi4j.api.structure.Module;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,9 +27,11 @@ import java.util.List;
 @Activators(ParserService.Activator.class)
 public interface ParserService extends ParserServiceApi, ServiceComposite
 {
-	@Mutable
 	public abstract class Mixin implements ParserService
 	{
+		@Structure
+		protected Module selfContainer;
+
 		@Service
 		protected LoggerService loggerSvc;
 
@@ -40,7 +46,7 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 				return this;
 			}
 
-			state().set(new HashMap<>());
+			words().set(new HashMap<>());
 
 			loadDictionary("type");
 			loadDictionary("keyword");
@@ -72,13 +78,28 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 			return new BufferedReader(new FileReader(src));
 		}
 
+		@Factory
+		@Override
+		public Tokenizer getTokenizer(String grammar, String text)
+		{
+			TransientBuilder<Tokenizer> builder = selfContainer.newTransientBuilder(Tokenizer.class);
+
+			builder.prototype()
+			       .grammar()
+			       .set(grammar);
+
+			builder.prototype()
+			       .input()
+			       .set(text);
+
+			return builder.newInstance().begin();
+		}
+
 		@Note("Using the same name will overwrite older dictionary data stored under that name")
 		@Override
 		public ParserService loadDictionary(String name)
 		{
-			try {
-				BufferedReader reader = getDictionaryReader(name);
-
+			try (BufferedReader reader = getDictionaryReader(name)) {
 				List<String> words = new ArrayList<>();
 				while (true) {
 					String line = reader.readLine();
@@ -92,8 +113,7 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 					}
 				}
 
-				reader.close();
-				state().get()
+				words().get()
 				       .put(name, words);
 
 				return this;
@@ -110,7 +130,7 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 		public Boolean lookup(String token, String dictionary, Boolean regex)
 		{
 			List<String> words =
-				state().get()
+				words().get()
 				       .get(dictionary);
 
 			if (words == null) {
@@ -138,14 +158,14 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 				return this;
 			}
 
-			state().get()
+			words().get()
 			       .values()
 			       .forEach(List::clear);
 
-			state().get()
+			words().get()
 			       .clear();
 
-			state().set(null);
+			words().set(null);
 			active().set(false);
 
 			loggerSvc.info(getClass(), "Service '" + identity().get() + "' passivated (" + metainfo().get() + ")");
@@ -154,7 +174,6 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 	}
 
 
-	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<ParserService>>
 	{
 		@Override

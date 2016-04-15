@@ -1,4 +1,4 @@
-package net.libcsdbg.jtracer.service.registry;
+package net.libcsdbg.jtracer.service.config;
 
 import net.libcsdbg.jtracer.annotation.MixinNote;
 import net.libcsdbg.jtracer.annotation.Mutable;

@@ -2,8 +2,9 @@ package net.libcsdbg.jtracer.core;
 
 import net.libcsdbg.jtracer.component.Alert;
 import net.libcsdbg.jtracer.component.MainFrame;
-import net.libcsdbg.jtracer.service.registry.RegistryService;
-import net.libcsdbg.jtracer.service.utility.UtilityService;
+import net.libcsdbg.jtracer.service.log.LoggerService;
+import net.libcsdbg.jtracer.service.config.RegistryService;
+import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.qi4j.api.injection.scope.Service;
@@ -23,6 +24,9 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 
 	protected static Logger rootLogger = null;
 
+
+	@Service
+	protected LoggerService loggerSvc;
 
 	@Service
 	protected RegistryService registrySvc;
@@ -135,7 +139,7 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 			}
 		}
 		catch (Throwable err) {
-			rootLogger.catching(err);
+			getRootLogger().catching(err);
 			exitCode = 1;
 		}
 		finally {
@@ -145,7 +149,7 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 				}
 			}
 			catch (RuntimeException err) {
-				rootLogger.catching(err);
+				getRootLogger().catching(err);
 				exitCode = 1;
 			}
 		}
@@ -217,6 +221,7 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 					active = false;
 				}
 
+				/* The only case of log unrestricted of the dynamic log level */
 				getRootLogger().debug("Application '" + application.name() + "' asynchronously passivated");
 			}
 			catch (Throwable err) {
@@ -271,13 +276,13 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 	@Override
 	public void windowActivated(WindowEvent event)
 	{
-		getRootLogger().trace(event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 	}
 
 	@Override
 	public synchronized void windowClosed(WindowEvent event)
 	{
-		getRootLogger().trace(event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
 		gui = null;
 		notifyAll();
@@ -286,7 +291,7 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 	@Override
 	public synchronized void windowClosing(WindowEvent event)
 	{
-		getRootLogger().trace(event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
 		boolean reply = Alert.prompt(gui, "Are you sure you want to quit?");
 		if (!reply) {
@@ -299,25 +304,25 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 	@Override
 	public void windowDeactivated(WindowEvent event)
 	{
-		getRootLogger().trace(event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 	}
 
 	@Override
 	public void windowDeiconified(WindowEvent event)
 	{
-		getRootLogger().trace(event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 	}
 
 	@Override
 	public void windowIconified(WindowEvent event)
 	{
-		getRootLogger().trace(event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 	}
 
 	@Override
 	public void windowOpened(WindowEvent event)
 	{
-		getRootLogger().trace(event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 	}
 
 	static {

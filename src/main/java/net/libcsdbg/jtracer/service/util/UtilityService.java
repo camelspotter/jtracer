@@ -1,8 +1,8 @@
-package net.libcsdbg.jtracer.service.utility;
+package net.libcsdbg.jtracer.service.util;
 
 import net.libcsdbg.jtracer.annotation.Mutable;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.registry.RegistryService;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
 import org.qi4j.api.injection.scope.Service;

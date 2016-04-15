@@ -2,7 +2,7 @@ package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.registry.RegistryService;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;

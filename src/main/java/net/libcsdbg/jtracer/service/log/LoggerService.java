@@ -1,8 +1,9 @@
 package net.libcsdbg.jtracer.service.log;
 
 import net.libcsdbg.jtracer.annotation.MixinNote;
-import net.libcsdbg.jtracer.annotation.Mutable;
+import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.core.ApplicationCore;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.qi4j.api.activation.ActivatorAdapter;
@@ -15,12 +16,38 @@ import org.qi4j.api.service.ServiceReference;
 @Activators(LoggerService.Activator.class)
 public interface LoggerService extends LoggerServiceApi, ServiceComposite
 {
-	@Mutable
 	@MixinNote("The default service implementation uses log4j2")
 	public abstract class Mixin implements LoggerService
 	{
 		protected Logger rootLogger;
 
+
+		protected static LogLevel translateLogLevel(Level level)
+		{
+			if (level.equals(Level.TRACE)) {
+				return LogLevel.trace;
+			}
+
+			else if (level.equals(Level.DEBUG)) {
+				return LogLevel.debug;
+			}
+
+			else if (level.equals(Level.INFO)) {
+				return LogLevel.info;
+			}
+
+			else if (level.equals(Level.WARN)) {
+				return LogLevel.warning;
+			}
+
+			else if (level.equals(Level.ERROR)) {
+				return LogLevel.error;
+			}
+
+			else {
+				return LogLevel.fatal;
+			}
+		}
 
 		@Override
 		public LoggerService activate()
@@ -34,6 +61,7 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 				throw new RuntimeException("Root logger unattainable");
 			}
 
+			dynamicLogLevel().set(translateLogLevel(rootLogger.getLevel()));
 			metainfo().set("org.apache.logging.log4j");
 			mute().set(false);
 			active().set(true);
@@ -44,7 +72,7 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 		@Override
 		public LoggerService catching(Class<?> clazz, Throwable err)
 		{
-			if (mute().get()) {
+			if (mute().get() || !isDynamicLogLevelEnabled(LogLevel.error)) {
 				return this;
 			}
 
@@ -56,10 +84,22 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 			return this;
 		}
 
+		@Note("Fatal exceptions cannot be suppressed")
+		@Override
+		public LoggerService catchingFatal(Class<?> clazz, Throwable err)
+		{
+			Logger current = getLoggerForClass(clazz);
+			if (current.isFatalEnabled()) {
+				current.catching(err);
+			}
+
+			return this;
+		}
+
 		@Override
 		public LoggerService debug(Class<?> clazz, String record)
 		{
-			if (mute().get()) {
+			if (mute().get() || !isDynamicLogLevelEnabled(LogLevel.debug)) {
 				return this;
 			}
 
@@ -74,7 +114,7 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 		@Override
 		public LoggerService error(Class<?> clazz, String record)
 		{
-			if (mute().get()) {
+			if (mute().get() || !isDynamicLogLevelEnabled(LogLevel.error)) {
 				return this;
 			}
 
@@ -86,13 +126,10 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 			return this;
 		}
 
+		@Note("Fatal errors cannot be suppressed")
 		@Override
 		public LoggerService fatal(Class<?> clazz, String record)
 		{
-			if (mute().get()) {
-				return this;
-			}
-
 			Logger current = getLoggerForClass(clazz);
 			if (current.isFatalEnabled()) {
 				current.fatal(record);
@@ -114,7 +151,7 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 		@Override
 		public LoggerService info(Class<?> clazz, String record)
 		{
-			if (mute().get()) {
+			if (mute().get() || !isDynamicLogLevelEnabled(LogLevel.info)) {
 				return this;
 			}
 
@@ -124,6 +161,34 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 			}
 
 			return this;
+		}
+
+		@Override
+		public Boolean isDynamicLogLevelEnabled(LogLevel level)
+		{
+			return dynamicLogLevel().get().ordinal() <= level.ordinal();
+		}
+
+		@Override
+		public LoggerService logLevelDown()
+		{
+			int ordinal = dynamicLogLevel().get().ordinal() - 1;
+			if (ordinal >= 0) {
+				dynamicLogLevel().set(LogLevel.values()[ordinal]);
+			}
+
+			return debug(getClass(), "LoggerService '" + identity().get() + "' current log level -> " + dynamicLogLevel().get().name());
+		}
+
+		@Override
+		public LoggerService logLevelUp()
+		{
+			int ordinal = dynamicLogLevel().get().ordinal() + 1;
+			if (ordinal <= LogLevel.fatal.ordinal()) {
+				dynamicLogLevel().set(LogLevel.values()[ordinal]);
+			}
+
+			return debug(getClass(), "LoggerService '" + identity().get() + "' current log level -> " + dynamicLogLevel().get().name());
 		}
 
 		@Override
@@ -143,7 +208,7 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 		@Override
 		public LoggerService trace(Class<?> clazz, String record)
 		{
-			if (mute().get()) {
+			if (mute().get() || !isDynamicLogLevelEnabled(LogLevel.trace)) {
 				return this;
 			}
 
@@ -158,7 +223,7 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 		@Override
 		public LoggerService warning(Class<?> clazz, String record)
 		{
-			if (mute().get()) {
+			if (mute().get() || !isDynamicLogLevelEnabled(LogLevel.warning)) {
 				return this;
 			}
 
@@ -172,7 +237,6 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 	}
 
 
-	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<LoggerService>>
 	{
 		@Override

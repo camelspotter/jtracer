@@ -1,0 +1,8 @@
+Name: ${name}
+Manifest-Version: 1.0
+Implementation-Version: ${project.version}
+Implementation-Title: ${name} ${project.description}
+Implementation-Vendor: ${project.author}
+Main-Class: net.libcsdbg.jtracer.core.ApplicationCore
+Sealed: true
+SplashScreen-Image: theme/common/splash.png

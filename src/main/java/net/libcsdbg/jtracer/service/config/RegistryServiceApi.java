@@ -1,4 +1,4 @@
-package net.libcsdbg.jtracer.service.registry;
+package net.libcsdbg.jtracer.service.config;
 
 import java.util.Map;
 import java.util.Set;

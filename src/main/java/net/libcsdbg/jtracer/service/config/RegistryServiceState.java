@@ -1,4 +1,4 @@
-package net.libcsdbg.jtracer.service.registry;
+package net.libcsdbg.jtracer.service.config;
 
 import org.qi4j.api.common.Optional;
 import org.qi4j.api.property.Property;

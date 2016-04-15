@@ -1,8 +1,8 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
-import net.libcsdbg.jtracer.service.component.ComponentService;
-import net.libcsdbg.jtracer.service.component.value.GridPresets;
+import net.libcsdbg.jtracer.service.graphics.ComponentService;
+import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import org.qi4j.api.injection.scope.Service;
 

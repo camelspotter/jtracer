@@ -1,8 +1,8 @@
-package net.libcsdbg.jtracer.service.component;
+package net.libcsdbg.jtracer.service.util;
 
 import org.qi4j.api.property.Property;
 
-public interface ComponentServiceState
+public interface UtilityServiceState
 {
 	Property<Boolean> active();
 

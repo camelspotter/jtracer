@@ -1,13 +1,12 @@
 package net.libcsdbg.jtracer.service.log.mock;
 
 import net.libcsdbg.jtracer.annotation.MixinNote;
-import net.libcsdbg.jtracer.annotation.Mutable;
+import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 
 import java.io.PrintStream;
 
-@Mutable
-@MixinNote("This is a mock service implementation, it logs on console with a simple format")
+@MixinNote("This is a mock service implementation, it logs on console with a simple format, ignoring log levels")
 public abstract class MockLoggerService implements LoggerService
 {
 	protected PrintStream logSink;
@@ -25,6 +24,7 @@ public abstract class MockLoggerService implements LoggerService
 		logSink = System.out;
 		errorSink = System.err;
 
+		dynamicLogLevel().set(LogLevel.trace);
 		metainfo().set("mock");
 		mute().set(false);
 		active().set(true);
@@ -40,6 +40,15 @@ public abstract class MockLoggerService implements LoggerService
 			err.printStackTrace(errorSink);
 		}
 
+		return this;
+	}
+
+	@Note("Fatal exceptions cannot be suppressed")
+	@Override
+	public LoggerService catchingFatal(Class<?> clazz, Throwable err)
+	{
+		errorSink.println(clazz.getName() + ": ");
+		err.printStackTrace(errorSink);
 		return this;
 	}
 
@@ -63,13 +72,11 @@ public abstract class MockLoggerService implements LoggerService
 		return this;
 	}
 
+	@Note("Fatal errors cannot be suppressed")
 	@Override
 	public LoggerService fatal(Class<?> clazz, String record)
 	{
-		if (!mute().get()) {
-			errorSink.println("[FATAL] " + clazz.getName() + ": " + record);
-		}
-
+		errorSink.println("[FATAL] " + clazz.getName() + ": " + record);
 		return this;
 	}
 
@@ -80,6 +87,24 @@ public abstract class MockLoggerService implements LoggerService
 			logSink.println("[INFO] " + clazz.getName() + ": " + record);
 		}
 
+		return this;
+	}
+
+	@Override
+	public Boolean isDynamicLogLevelEnabled(LogLevel level)
+	{
+		return true;
+	}
+
+	@Override
+	public LoggerService logLevelDown()
+	{
+		return this;
+	}
+
+	@Override
+	public LoggerService logLevelUp()
+	{
 		return this;
 	}
 

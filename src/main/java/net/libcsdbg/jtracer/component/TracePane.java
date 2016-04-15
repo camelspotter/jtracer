@@ -1,10 +1,12 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
-import net.libcsdbg.jtracer.service.component.ComponentService;
+import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.parser.ParserService;
-import net.libcsdbg.jtracer.service.registry.RegistryService;
+import net.libcsdbg.jtracer.service.text.parser.Tokenizer;
+import net.libcsdbg.jtracer.service.text.ParserService;
+import net.libcsdbg.jtracer.service.text.parser.Token;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
@@ -16,8 +18,6 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TracePane extends JTextPane implements AutoInjectable
 {
@@ -53,8 +53,7 @@ public class TracePane extends JTextPane implements AutoInjectable
 		selfInject();
 		details = request;
 
-		Style style = addStyle("plain", StyleContext.getDefaultStyleContext()
-		                                        .getStyle(StyleContext.DEFAULT_STYLE));
+		Style style = addStyle("plain", StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE));
 
 		/* Create paragraph style attributes */
 		String param = registrySvc.get("trace-padding");
@@ -116,13 +115,31 @@ public class TracePane extends JTextPane implements AutoInjectable
 
 	public TracePane append(String trace)
 	{
-		/* Delimiters */
+		Tokenizer analyzer = parserSvc.getTokenizer("[\\s\\{\\}\\(\\)\\*&,:<>]+", trace);
+
+		Token t = analyzer.next();
+		while (t != null) {
+			append(t.text().get(),
+			       t.type()
+			        .get()
+			        .name());
+
+			append(t.delimiter().get(), "delimiter");
+			t = analyzer.next();
+		}
+
+		if (analyzer.hasRemainder()) {
+			t = analyzer.remainder();
+			append(t.text().get(), t.type().get().name());
+		}
+
+		/* Delimiters /
 		String expr = "[\\s\\{\\}\\(\\)\\*&,:<>]+";
 
 		Pattern regexp = Pattern.compile(expr);
 		Matcher parser = regexp.matcher(trace);
 
-		/* Parse the trace and append it word-by-word doing syntax highlighting */
+		/* Parse the trace and append it word-by-word doing syntax highlighting /
 		int offset = 0;
 		String prev = null;
 		while (parser.find()) {
@@ -137,7 +154,7 @@ public class TracePane extends JTextPane implements AutoInjectable
 
 		if (offset < trace.length() - 1) {
 			append(trace.substring(offset), prev, null);
-		}
+		} */
 
 		return this;
 	}

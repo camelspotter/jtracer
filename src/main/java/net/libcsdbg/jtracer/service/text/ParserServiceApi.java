@@ -1,9 +1,12 @@
-package net.libcsdbg.jtracer.service.parser;
+package net.libcsdbg.jtracer.service.text;
 
-/* todo Add API to generate a parser composite */
+import net.libcsdbg.jtracer.service.text.parser.Tokenizer;
+
 public interface ParserServiceApi extends ParserServiceState
 {
 	ParserService activate();
+
+	Tokenizer getTokenizer(String grammar, String text);
 
 	ParserService loadDictionary(String name);
 

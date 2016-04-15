@@ -1,12 +1,14 @@
 package net.libcsdbg.jtracer.core;
 
 import net.libcsdbg.jtracer.component.*;
-import net.libcsdbg.jtracer.service.component.ComponentService;
-import net.libcsdbg.jtracer.service.component.value.GridPresets;
+import net.libcsdbg.jtracer.service.graphics.ComponentService;
+import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.parser.ParserService;
-import net.libcsdbg.jtracer.service.registry.RegistryService;
-import net.libcsdbg.jtracer.service.utility.UtilityService;
+import net.libcsdbg.jtracer.service.text.parser.Tokenizer;
+import net.libcsdbg.jtracer.service.text.ParserService;
+import net.libcsdbg.jtracer.service.text.parser.Token;
+import net.libcsdbg.jtracer.service.config.RegistryService;
+import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.common.Visibility;
 import org.qi4j.bootstrap.*;
 
@@ -92,6 +94,12 @@ public class Assembler implements ApplicationAssembler
 
 	protected Assembler registerParserService(ModuleAssembly module)
 	{
+		module.values(Token.class)
+		      .visibleIn(Visibility.application);
+
+		module.transients(Tokenizer.class)
+		      .visibleIn(Visibility.application);
+
 		module.services(ParserService.class)
 		      .identifiedBy("Parser Service")
 		      .visibleIn(Visibility.application)

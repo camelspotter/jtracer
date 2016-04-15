@@ -1,6 +1,5 @@
 package net.libcsdbg.jtracer.core;
 
-import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import org.qi4j.api.injection.scope.Service;
 
