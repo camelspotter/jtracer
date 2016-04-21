@@ -1,7 +1,6 @@
 package net.libcsdbg.jtracer.service.config;
 
 import net.libcsdbg.jtracer.annotation.MixinNote;
-import net.libcsdbg.jtracer.annotation.Mutable;
 import net.libcsdbg.jtracer.core.ApplicationCore;
 import net.libcsdbg.jtracer.core.ApplicationProperties;
 import net.libcsdbg.jtracer.service.log.LoggerService;
@@ -19,10 +18,10 @@ import java.util.Set;
 
 @Mixins(RegistryService.Mixin.class)
 @Activators(RegistryService.Activator.class)
-public interface RegistryService extends RegistryServiceApi, ServiceComposite
+public interface RegistryService extends RegistryServiceApi,
+                                         ServiceComposite
 {
-	@Mutable
-	@MixinNote("The default service implementation is based on java.util")
+	@MixinNote("The default service implementation is based on java.util. Null values are not allowed to be inserted via the API")
 	public abstract class Mixin implements RegistryService
 	{
 		@Service
@@ -36,17 +35,7 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 				return this;
 			}
 
-			ApplicationProperties properties =
-				ApplicationCore.getCurrentApplicationCore()
-				               .getApplicationProperties();
-
-			Map<String, String> map = new HashMap<>(properties.size());
-			for (String key : properties.getPropertyNames()) {
-				map.put(key, properties.getProperty(key));
-			}
-
-			state().set(map);
-			source().set(properties.getSource());
+			load();
 
 			metainfo().set("java.util");
 			active().set(true);
@@ -132,9 +121,26 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 			return map().keySet();
 		}
 
+		protected RegistryService load()
+		{
+			ApplicationProperties properties =
+				ApplicationCore.getCurrentApplicationCore()
+				               .getApplicationProperties();
+
+			Map<String, String> map = new HashMap<>(properties.size());
+			for (String key : properties.getPropertyNames()) {
+				map.put(key, properties.getProperty(key));
+			}
+
+			options().set(map);
+			source().set(properties.getSource());
+
+			return this;
+		}
+
 		protected Map<String, String> map()
 		{
-			return state().get();
+			return options().get();
 		}
 
 		@Override
@@ -145,7 +151,7 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 			}
 
 			clear();
-			state().set(null);
+			options().set(null);
 			active().set(false);
 
 			loggerSvc.info(getClass(), "Service '" + identity().get() + "' passivated (" + metainfo().get() + ")");
@@ -209,7 +215,6 @@ public interface RegistryService extends RegistryServiceApi, ServiceComposite
 	}
 
 
-	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<RegistryService>>
 	{
 		@Override

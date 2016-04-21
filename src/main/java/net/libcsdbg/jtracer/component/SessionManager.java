@@ -1,5 +1,6 @@
 package net.libcsdbg.jtracer.component;
 
+import net.libcsdbg.jtracer.core.ApplicationCore;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
@@ -28,17 +29,21 @@ public class SessionManager extends Component implements WindowListener,
 	protected LoggerService loggerSvc;
 
 
-	protected JFrame owner;
-
-	protected List<Session> sessions;
-
 	protected Integer current;
+
+	protected final JFrame owner;
+
+	protected final List<Session> sessions;
 
 
 	public SessionManager()
 	{
 		super();
 		selfInject();
+
+		current = -1;
+		owner = null;
+		sessions = null;
 	}
 
 	public SessionManager(JFrame parent)
@@ -46,9 +51,9 @@ public class SessionManager extends Component implements WindowListener,
 		super();
 		selfInject();
 
+		current = -1;
 		owner = parent;
 		sessions = new ArrayList<>();
-		current = -1;
 
 		addPropertyChangeListener("sessionCount", (PropertyChangeListener) owner);
 		addPropertyChangeListener("currentSession", (PropertyChangeListener) owner);
@@ -66,9 +71,10 @@ public class SessionManager extends Component implements WindowListener,
 	public SessionManager disposeAll()
 	{
 		while (sessions.size() > 0) {
-			Session current = sessions.remove(0);
-			current.removeWindowListener(this);
-			current.dispose();
+			Session first = sessions.remove(0);
+			first.removeWindowListener(this);
+			first.quit()
+			     .dispose();
 		}
 
 		current = -1;
@@ -79,9 +85,10 @@ public class SessionManager extends Component implements WindowListener,
 
 	public SessionManager disposeCurrent()
 	{
-		sessions.get(current)
-		        .quit()
-		        .dispose();
+		if (current >= 0) {
+			sessions.get(current)
+			        .dispose();
+		}
 
 		return this;
 	}
@@ -130,14 +137,16 @@ public class SessionManager extends Component implements WindowListener,
 	public SessionManager setAlwaysOnTop(Integer index, Boolean alwaysOnTop)
 	{
 		int size = sessions.size();
-		if (index >= 0 && index < size) {
-			sessions.get(index)
-			        .setAlwaysOnTop(alwaysOnTop);
+		if (index < 0) {
+			for (index = 0; index < size; index++) {
+				sessions.get(index)
+				        .setAlwaysOnTop(alwaysOnTop);
+			}
 
 			return this;
 		}
 
-		for (index = 0; index < size; index++) {
+		if (index < size) {
 			sessions.get(index)
 			        .setAlwaysOnTop(alwaysOnTop);
 		}
@@ -147,6 +156,10 @@ public class SessionManager extends Component implements WindowListener,
 
 	public SessionManager setClientPosition(Integer index)
 	{
+		if (index < 0) {
+			return this;
+		}
+
 		GridPresets presets = componentSvc.getGridPresets("desktop");
 
 		int rowSize = presets.rowSize().get();
@@ -169,10 +182,11 @@ public class SessionManager extends Component implements WindowListener,
 			return this;
 		}
 
-		Session current = sessions.get(selected);
-		current.setIconified(false);
-		current.toFront();
+		Session session = sessions.get(selected);
+		session.setIconified(false);
+		session.toFront();
 
+		current = selected;
 		return this;
 	}
 
@@ -180,32 +194,41 @@ public class SessionManager extends Component implements WindowListener,
 	{
 		/* Defer execution to another thread */
 		Runnable worker = () -> {
-			synchronized (this) {
+			synchronized (sessions) {
 				int previous = current;
 				for (Session session : sessions) {
 					session.setIconified(iconified);
 
 					try {
-						Thread.sleep(50);
+						Thread.sleep(Config.iconificationDelay);
 					}
 					catch (InterruptedException ignored) {
 					}
 				}
 
 				/* When a window is restored, it's activated by the OS window manager */
-				if (!iconified) {
+				if (!iconified && previous >= 0) {
 					sessions.get(previous)
 					        .toFront();
 				}
 			}
 		};
 
-		new Thread(worker, "Session Worker Thread").start();
+		ThreadGroup group =
+			Thread.currentThread()
+			      .getThreadGroup();
+
+		Thread runner = new Thread(group, worker, Config.iconificationWorkerName);
+		runner.setUncaughtExceptionHandler(ApplicationCore.getCurrentApplicationCore()
+		                                                  .getUncaughtExceptionHandler());
+		runner.start();
+
 		return this;
 	}
 
 	public SessionManager shiftSelection(Integer step)
 	{
+		/* Quantize step */
 		step = (step < 0) ? -1 : 1;
 		Session previous = sessions.get(current);
 		Session selected;
@@ -233,171 +256,116 @@ public class SessionManager extends Component implements WindowListener,
 		return this;
 	}
 
+	@Override
 	public void windowActivated(WindowEvent event)
 	{
-		loggerSvc.debug(getClass(), event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			JFrame source = (JFrame) event.getWindow();
-			if (source.equals(owner)) {
-				return;
-			}
-
-			for (int i = 0, size = sessions.size(); i < size; i++) {
-				Session session = sessions.get(i);
-
-				if (source.equals(session)) {
-					current = i;
-					firePropertyChange("currentSession", null, current);
-					break;
-				}
-			}
+		JFrame source = (JFrame) event.getWindow();
+		if (source.equals(owner)) {
+			return;
 		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+
+		for (int i = 0, size = sessions.size(); i < size; i++) {
+			Session session = sessions.get(i);
+
+			if (session.equals(source)) {
+				current = i;
+				firePropertyChange("currentSession", null, current);
+				break;
+			}
 		}
 	}
 
+	@Override
 	public void windowClosed(WindowEvent event)
 	{
-		loggerSvc.debug(getClass(), event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			JFrame source = (JFrame) event.getWindow();
-			if (source.equals(owner)) {
-				return;
-			}
-
-			Session session = sessions.remove((int) current);
-			session.quit();
-
-			int size = sessions.size();
-			if (size == 0) {
-				current = -1;
-				firePropertyChange("sessionCount", null, size);
-				return;
-			}
-
-			if (current == size) {
-				current--;
-			}
-
-			firePropertyChange("sessionCount", null, size);
-
-			session = sessions.get(current);
-			if (session.isIconified()) {
-				shiftSelection(1);
-			}
-			else {
-				session.toFront();
-			}
+		JFrame source = (JFrame) event.getWindow();
+		if (source.equals(owner)) {
+			return;
 		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+
+		Session session = sessions.remove(current.intValue());
+		session.quit();
+
+		int size = sessions.size();
+		firePropertyChange("sessionCount", null, size);
+
+		if (size == 0) {
+			current = -1;
+			return;
+		}
+		else if (current == size) {
+			current--;
+		}
+
+		session = sessions.get(current);
+		if (session.isIconified()) {
+			shiftSelection(1);
+		}
+		else {
+			session.toFront();
 		}
 	}
 
+	@Override
 	public void windowClosing(WindowEvent event)
 	{
-		loggerSvc.debug(getClass(), event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			JFrame source = (JFrame) event.getWindow();
-			if (source.equals(owner)) {
-				return;
-			}
-
-			int i, size;
-			for (i = 0, size = sessions.size(); i < size; i++) {
-				if (source.equals(sessions.get(i))) {
-					break;
-				}
-			}
-
-			if (i == size) {
-				return;
-			}
-
-			Session session = sessions.remove(i);
-			session.removeWindowListener(this);
-			session.quit();
-			session.dispose();
-
-			size--;
-			if (size == 0) {
-				current = -1;
-				firePropertyChange("sessionCount", null, size);
-				return;
-			}
-
-			if (i < current || current == size) {
-				current--;
-			}
-
-			firePropertyChange("sessionCount", null, size);
-
-			session = sessions.get(current);
-			if (session.isIconified()) {
-				shiftSelection(1);
-			}
-			else {
-				session.toFront();
-			}
-		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+		JFrame source = (JFrame) event.getWindow();
+		if (!source.equals(owner) && current >= 0 && current < sessions.size()) {
+			sessions.get(current)
+			        .dispose();
 		}
 	}
 
+	@Override
 	public void windowDeactivated(WindowEvent event)
 	{
-		loggerSvc.debug(getClass(), event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 	}
 
+	@Override
 	public void windowDeiconified(WindowEvent event)
 	{
-		loggerSvc.debug(getClass(), event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			JFrame source = (JFrame) event.getWindow();
-			if (source.equals(owner)) {
-				setIconified(false);
-			}
-		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+		JFrame source = (JFrame) event.getWindow();
+		if (source.equals(owner)) {
+			setIconified(false);
 		}
 	}
 
+	@Override
 	public void windowIconified(WindowEvent event)
 	{
-		loggerSvc.debug(getClass(), event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			JFrame source = (JFrame) event.getWindow();
-			if (source.equals(owner)) {
-				setIconified(true);
-			}
-		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+		JFrame source = (JFrame) event.getWindow();
+		if (source.equals(owner)) {
+			setIconified(true);
 		}
 	}
 
+	@Override
 	public void windowOpened(WindowEvent event)
 	{
-		loggerSvc.debug(getClass(), event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			JFrame source = (JFrame) event.getWindow();
-			if (source.equals(owner)) {
-				return;
-			}
-
+		JFrame source = (JFrame) event.getWindow();
+		if (!source.equals(owner)) {
 			firePropertyChange("sessionCount", null, sessions.size());
 		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
-		}
+	}
+
+
+	public static class Config
+	{
+		public static Integer iconificationDelay = 128;
+
+		public static String iconificationWorkerName = "Session Minimizing/Maximizing Worker Thread";
 	}
 }

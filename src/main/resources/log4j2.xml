@@ -12,8 +12,8 @@
         </Console>
 
         <RollingFile name="full"
-                     fileName="${prefix}/log4j2.${artifact}.full.log"
-                     filePattern="${prefix}/log4j2.${artifact}.full-%d{${date}}.log">
+                     fileName="${prefix}/log4j2.${name}-${project.version}.full.log"
+                     filePattern="${prefix}/log4j2.${name}-${project.version}.full-%d{${date}}.log">
             <PatternLayout pattern="[%d{${timestamp}}] [%level] [%c{1}] - %msg%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
@@ -21,8 +21,8 @@
         </RollingFile>
 
         <RollingFile name="main"
-                     fileName="${prefix}/log4j2.${artifact}.main.log"
-                     filePattern="${prefix}/log4j2.${artifact}.main-%d{${date}}.log">
+                     fileName="${prefix}/log4j2.${name}-${project.version}.main.log"
+                     filePattern="${prefix}/log4j2.${name}-${project.version}.main-%d{${date}}.log">
             <PatternLayout pattern="[%d{${timestamp}}] [%level] [%c{1}] - %msg%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
@@ -31,7 +31,7 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="com.projectbeagle.${artifact}.log4j2" level="${log4j.level.full}" additivity="false">
+        <Logger name="net.libcsdbg.${name}-${project.version}.log4j2" level="${log4j.level.full}" additivity="false">
             <appender-ref ref="console" level="${log4j.level.console}"/>
             <appender-ref ref="full" level="${log4j.level.full}"/>
             <appender-ref ref="main" level="${log4j.level.main}"/>

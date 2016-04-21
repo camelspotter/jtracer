@@ -55,7 +55,7 @@ public class Alert extends JDialog implements ActionListener,
 		GridBagConstraints bagConstraints = new GridBagConstraints();
 		bagConstraints.gridy = 0;
 		bagConstraints.gridx = 0;
-		bagConstraints.insets = new Insets(12, 4, 4, 4);
+		bagConstraints.insets = Config.buttonMargin;
 
 		ImageIcon icon = null;
 		switch (type) {
@@ -89,7 +89,7 @@ public class Alert extends JDialog implements ActionListener,
 
 		JLabel l = new JLabel(icon);
 		bagConstraints.gridx = 0;
-		bagConstraints.insets = new Insets(12, 12, 0, 12);
+		bagConstraints.insets = Config.iconMargin;
 		bagConstraints.anchor = GridBagConstraints.NORTH;
 		bagConstraints.gridheight = lines.length;
 		layout.setConstraints(l, bagConstraints);
@@ -97,7 +97,7 @@ public class Alert extends JDialog implements ActionListener,
 
 		bagConstraints.gridx = 1;
 		bagConstraints.gridheight = 1;
-		bagConstraints.insets = new Insets(8, 0, 0, 8);
+		bagConstraints.insets = Config.iconMargin;
 		bagConstraints.anchor = GridBagConstraints.WEST;
 
 		Font font = componentSvc.getFont("alert");
@@ -148,8 +148,7 @@ public class Alert extends JDialog implements ActionListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		String cmd = event.getActionCommand();
-		if (cmd.equals("Ok")) {
+		if (event.getActionCommand().equals("Ok")) {
 			reply = true;
 		}
 
@@ -162,7 +161,7 @@ public class Alert extends JDialog implements ActionListener,
 	}
 
 
-	public enum AlertType
+	public static enum AlertType
 	{
 		error(0x01),
 
@@ -173,9 +172,16 @@ public class Alert extends JDialog implements ActionListener,
 
 		protected Integer ordinal;
 
-		AlertType(Integer ordinal)
+		private AlertType(Integer ordinal)
 		{
 			this.ordinal = ordinal;
 		}
+	}
+
+	public static class Config
+	{
+		public static Insets buttonMargin = new Insets(12, 4, 4, 4);
+
+		public static Insets iconMargin = new Insets(12, 12, 0, 12);
 	}
 }

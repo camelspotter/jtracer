@@ -1,8 +1,8 @@
-package net.libcsdbg.jtracer.service.text.parser;
+package net.libcsdbg.jtracer.service.text.parse;
 
 import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.MixinNote;
-import net.libcsdbg.jtracer.service.text.ParserService;
+import net.libcsdbg.jtracer.service.text.DictionaryService;
 import org.qi4j.api.common.Optional;
 import org.qi4j.api.composite.TransientComposite;
 import org.qi4j.api.injection.scope.Service;
@@ -15,14 +15,13 @@ import org.qi4j.library.constraints.annotation.NotEmpty;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.libcsdbg.jtracer.service.text.parser.Token.Type;
+import static net.libcsdbg.jtracer.service.text.parse.Token.Type;
 
 @Mixins(Tokenizer.Mixin.class)
-public interface Tokenizer extends TokenizerState, TransientComposite
+public interface Tokenizer extends TokenizerState,
+                                   TransientComposite
 {
 	Tokenizer begin();
-
-	Token getToken(@NotEmpty String text, @Optional String delimiter, Type type);
 
 	Boolean hasRemainder();
 
@@ -38,15 +37,17 @@ public interface Tokenizer extends TokenizerState, TransientComposite
 
 	Type resolveTokenType(@NotEmpty String tokenText, @Optional String delimiter);
 
+	Token tokenOf(@NotEmpty String text, @Optional String delimiter, Type type);
 
-	@MixinNote("The default implementation is based on java.util.regex and it is C++ trace specific")
+
+	@MixinNote("The default implementation is based on java.util.regex and it is C++ specific")
 	public abstract class Mixin implements Tokenizer
 	{
 		@Structure
 		protected Module selfContainer;
 
 		@Service
-		protected ParserService parserSvc;
+		protected DictionaryService dictionarySvc;
 
 
 		protected Pattern pattern;
@@ -67,27 +68,6 @@ public interface Tokenizer extends TokenizerState, TransientComposite
 			return this;
 		}
 
-		@Factory
-		@Override
-		public Token getToken(String text, String delimiter, Type type)
-		{
-			ValueBuilder<Token> builder = selfContainer.newValueBuilder(Token.class);
-
-			builder.prototype()
-			       .text()
-			       .set(text);
-
-			builder.prototype()
-			       .delimiter()
-			       .set(delimiter);
-
-			builder.prototype()
-			       .type()
-			       .set(type);
-
-			return builder.newInstance();
-		}
-
 		@Override
 		public Boolean hasRemainder()
 		{
@@ -105,7 +85,7 @@ public interface Tokenizer extends TokenizerState, TransientComposite
 			String tokenText = input().get().substring(offset, matcher.start());
 			offset = matcher.end();
 
-			return getToken(tokenText, delimiter, resolveTokenType(tokenText, delimiter));
+			return tokenOf(tokenText, delimiter, resolveTokenType(tokenText, delimiter));
 		}
 
 		@Override
@@ -136,7 +116,7 @@ public interface Tokenizer extends TokenizerState, TransientComposite
 			}
 
 			String tokenText = input().get().substring(offset);
-			return getToken(tokenText, null, resolveTokenType(tokenText, null));
+			return tokenOf(tokenText, null, resolveTokenType(tokenText, null));
 		}
 
 		@Override
@@ -150,25 +130,23 @@ public interface Tokenizer extends TokenizerState, TransientComposite
 		@Override
 		public Type resolveTokenType(String tokenText, String delimiter)
 		{
-			String num = "(0x)?\\p{XDigit}+$";
-
 			/* Decimal and hex numbers */
-			if (tokenText.matches(num)) {
+			if (tokenText.matches(Config.numberPattern)) {
 				return Type.number;
 			}
 
 			/* File names */
-			else if (parserSvc.lookup(tokenText, "extension", true)) {
+			else if (dictionarySvc.lookup(tokenText, "extension", true)) {
 				return Type.file;
 			}
 
 			/* C++ integral types */
-			else if (parserSvc.lookup(tokenText, "type", false)) {
+			else if (dictionarySvc.lookup(tokenText, "type", false)) {
 				return Type.type;
 			}
 
 			/* C++ keywords (apart those for integral types) */
-			else if (parserSvc.lookup(tokenText, "keyword", false)) {
+			else if (dictionarySvc.lookup(tokenText, "keyword", false)) {
 				return Type.keyword;
 			}
 
@@ -179,12 +157,43 @@ public interface Tokenizer extends TokenizerState, TransientComposite
 				}
 
 				/* Function names */
-				else if (delimiter.equals("(") || delimiter.equals("<") || delimiter.startsWith("\n")) {
+				else if (delimiter.equals("(") ||
+				         delimiter.equals("<") ||
+				         delimiter.startsWith("\n")) {
 					return Type.function;
 				}
 			}
 
 			return Type.plain;
+		}
+
+		@Factory
+		@Override
+		public Token tokenOf(String text, String delimiter, Type type)
+		{
+			ValueBuilder<Token> builder = selfContainer.newValueBuilder(Token.class);
+
+			builder.prototype()
+			       .text()
+			       .set(text);
+
+			builder.prototype()
+			       .delimiter()
+			       .set(delimiter);
+
+			builder.prototype()
+			       .type()
+			       .set(type);
+
+			return builder.newInstance();
+		}
+
+
+		public static class Config
+		{
+			public static String grammar = "[\\s\\{\\}\\(\\)\\*&,:<>]+";
+
+			public static String numberPattern = "(0x)?\\p{XDigit}+$";
 		}
 	}
 }

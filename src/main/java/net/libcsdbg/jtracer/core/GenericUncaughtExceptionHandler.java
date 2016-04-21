@@ -5,7 +5,8 @@ import org.qi4j.api.injection.scope.Service;
 
 import java.util.Arrays;
 
-public class GenericUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler, AutoInjectable
+public class GenericUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler,
+                                                        AutoInjectable
 {
 	@Service
 	protected LoggerService loggerSvc;

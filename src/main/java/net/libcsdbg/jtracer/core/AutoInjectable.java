@@ -7,12 +7,14 @@ import org.qi4j.tools.model.descriptor.ModuleDetailDescriptor;
 
 public interface AutoInjectable
 {
-	default Application getApplication()
+	default Application application()
 	{
-		return ApplicationCore.getCurrentApplicationCore().getApplication();
+		return
+			ApplicationCore.getCurrentApplicationCore()
+			               .getApplication();
 	}
 
-	default Layer getLayer()
+	default Layer layer()
 	{
 		ModuleDetailDescriptor module =
 			ApplicationCore.getCurrentApplicationCore()
@@ -24,10 +26,10 @@ public interface AutoInjectable
 			      .descriptor()
 			      .name();
 
-		return getApplication().findLayer(layerName);
+		return application().findLayer(layerName);
 	}
 
-	default Module getModule()
+	default Module module()
 	{
 		ModuleDetailDescriptor module =
 			ApplicationCore.getCurrentApplicationCore()
@@ -40,12 +42,12 @@ public interface AutoInjectable
 			      .descriptor()
 			      .name();
 
-		return getApplication().findModule(layerName, moduleName);
+		return application().findModule(layerName, moduleName);
 	}
 
 	default AutoInjectable selfInject(Object... injected)
 	{
-		getModule().injectTo(this, injected);
+		module().injectTo(this, injected);
 		return this;
 	}
 
@@ -57,13 +59,13 @@ public interface AutoInjectable
 
 	default AutoInjectable selfInject(String layer, String module, Object... injected)
 	{
-		Module m = getApplication().findModule(layer, module);
+		Module m = application().findModule(layer, module);
 		return selfInject(m, injected);
 	}
 
 	default AutoInjectable selfInject(Layer layer, String module, Object... injected)
 	{
-		Module m = getApplication().findModule(layer.name(), module);
+		Module m = application().findModule(layer.name(), module);
 		return selfInject(m, injected);
 	}
 }

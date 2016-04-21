@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ApplicationProperties
 {
@@ -16,7 +17,7 @@ public class ApplicationProperties
 
 	public ApplicationProperties()
 	{
-		properties = new Properties();
+		this(null);
 	}
 
 	public ApplicationProperties(String source)
@@ -27,12 +28,17 @@ public class ApplicationProperties
 			source = Config.defaultSource;
 		}
 
-		this.source = source;
+		this.source = source.trim();
 		try (InputStream istream = getClass().getClassLoader().getResourceAsStream(source)) {
 			properties.load(istream);
 		}
 		catch (Throwable ignored) {
 		}
+	}
+
+	public String getApplicationFullName()
+	{
+		return getProperty(Config.fullNameParam);
 	}
 
 	public Application.Mode getApplicationMode()
@@ -54,6 +60,11 @@ public class ApplicationProperties
 		}
 	}
 
+	public String getApplicationName()
+	{
+		return getProperty(Config.nameParam);
+	}
+
 	public String getApplicationVersion()
 	{
 		return getProperty(Config.versionParam);
@@ -71,12 +82,21 @@ public class ApplicationProperties
 
 	public String getProperty(String property)
 	{
-		return properties.getProperty(property);
+		property = properties.getProperty(property);
+		if (property != null) {
+			property = property.trim();
+		}
+
+		return property;
 	}
 
 	public Set<String> getPropertyNames()
 	{
-		return properties.stringPropertyNames();
+		return
+			properties.stringPropertyNames()
+			          .stream()
+			          .map(String::trim)
+			          .collect(Collectors.toSet());
 	}
 
 	public Set<String> getPropertyValues()
@@ -84,10 +104,10 @@ public class ApplicationProperties
 		Set<String> retval = new HashSet<>(properties.size());
 		for (Object value : properties.values()) {
 			if (value instanceof String) {
-				retval.add((String) value);
+				retval.add(((String) value).trim());
 			}
 			else {
-				retval.add(value.toString());
+				retval.add(value.toString().trim());
 			}
 		}
 
@@ -103,8 +123,7 @@ public class ApplicationProperties
 	{
 		String phase = getBuildPhase();
 		return phase != null &&
-		       phase.trim()
-		            .toLowerCase()
+		       phase.toLowerCase()
 		            .equals("ci");
 	}
 
@@ -112,8 +131,7 @@ public class ApplicationProperties
 	{
 		String phase = getBuildPhase();
 		return phase != null &&
-		       phase.trim()
-		            .toLowerCase()
+		       phase.toLowerCase()
 		            .equals("development");
 	}
 
@@ -125,7 +143,10 @@ public class ApplicationProperties
 		}
 
 		param = param.toLowerCase();
-		return param.equals("true") || param.equals("yes") || param.equals("on");
+		return param.equals("true") ||
+		       param.equals("yes") ||
+		       param.equals("on") ||
+		       param.equals("1");
 	}
 
 	public Boolean isPropertyEqual(String property, String value)
@@ -144,8 +165,7 @@ public class ApplicationProperties
 	{
 		String phase = getBuildPhase();
 		return phase != null &&
-		       phase.trim()
-		            .toLowerCase()
+		       phase.toLowerCase()
 		            .equals("release");
 	}
 
@@ -153,8 +173,7 @@ public class ApplicationProperties
 	{
 		String phase = getBuildPhase();
 		return phase != null &&
-		       phase.trim()
-		            .toLowerCase()
+		       phase.toLowerCase()
 		            .equals("testing");
 	}
 
@@ -166,11 +185,13 @@ public class ApplicationProperties
 
 	public static class Config
 	{
-		/* Generic */
+		public static String buildPhaseParam = "buildPhase";
 
 		public static String defaultSource = "jtracer.properties";
 
-		public static String buildPhaseParam = "buildPhase";
+		public static String fullNameParam = "fullName";
+
+		public static String nameParam = "name";
 
 		public static String versionParam = "version";
 	}

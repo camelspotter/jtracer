@@ -3,7 +3,6 @@ package net.libcsdbg.jtracer.core;
 import net.libcsdbg.jtracer.component.Alert;
 import net.libcsdbg.jtracer.component.MainFrame;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,7 +17,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.channels.FileLock;
 
-public class ApplicationCore implements WindowListener, AutoInjectable
+public class ApplicationCore implements WindowListener,
+                                        AutoInjectable
 {
 	protected static ApplicationCore current = null;
 
@@ -29,49 +29,37 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 	protected LoggerService loggerSvc;
 
 	@Service
-	protected RegistryService registrySvc;
-
-	@Service
 	protected UtilityService utilitySvc;
 
 
 	protected final Application application;
 
-	protected final ApplicationProperties properties;
-
 	protected final Architecture architecture;
 
-	protected final Assembler assembler;
+	protected final ApplicationProperties properties;
 
-	protected final Energy4Java runtime;
 
+	protected Boolean active;
+
+	protected FileLock globalLock;
 
 	protected MainFrame gui;
 
-	protected FileLock lock;
-
-	protected Boolean active;
+	protected GenericUncaughtExceptionHandler uncaughtExceptionHandler;
 
 
 	public ApplicationCore()
 	{
-		application = null;
-		properties = null;
-		architecture = null;
-		assembler = null;
-		runtime = null;
+		this(null);
 	}
 
 	public ApplicationCore(String propertiesSource)
 	{
 		active = false;
-
 		properties = new ApplicationProperties(propertiesSource);
-		assembler = new Assembler(properties);
-		runtime = new Energy4Java();
 
 		try {
-			application = runtime.newApplication(assembler);
+			application = new Energy4Java().newApplication(new Assembler(properties));
 			architecture = new Architecture(application.descriptor());
 		}
 		catch (RuntimeException err) {
@@ -107,26 +95,23 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 	}
 
 	@SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-	public static void main(String[] args)
+	public static void main(String... args)
 	{
 		ApplicationCore core = null;
-		int exitCode = 0;
+		int exitCode = Config.exitSuccess;
 
 		try {
-			core = new ApplicationCore(null);
-			core.activate();
-
-			String path = core.registrySvc.get("lockFile");
-			File lockFile = core.utilitySvc.getResource(path);
-			FileOutputStream lockStream = new FileOutputStream(lockFile);
-
-			core.lock = lockStream.getChannel().tryLock();
-			if (core.lock == null) {
-				Alert.error(null, core.registrySvc.get("name") + " is already running", true);
+			String propertiesSource = null;
+			if (args.length > 0) {
+				propertiesSource = args[0].trim();
 			}
 
-			lockFile.deleteOnExit();
-			core.launchGui();
+			core =
+				new ApplicationCore(propertiesSource)
+					.activate()
+					.registerThreadUncaughtExceptionHandlers()
+					.obtainGlobalLock()
+					.launchGui();
 
 			synchronized (core) {
 				while (core.gui != null) {
@@ -140,7 +125,7 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 		}
 		catch (Throwable err) {
 			getRootLogger().catching(err);
-			exitCode = 1;
+			exitCode = Config.exitFailure;
 		}
 		finally {
 			try {
@@ -148,18 +133,18 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 					core.passivate();
 				}
 			}
-			catch (RuntimeException err) {
+			catch (Throwable err) {
 				getRootLogger().catching(err);
-				exitCode = 1;
+				exitCode = Config.exitFailure;
 			}
 		}
 
-		System.out.println("finished");
+		System.out.println(Config.farewell);
 		System.exit(exitCode);
 	}
 
 	/* No synchronization needed during activation */
-	public ApplicationCore activate()
+	protected ApplicationCore activate()
 	{
 		if (active) {
 			return this;
@@ -203,9 +188,13 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 		return architecture;
 	}
 
-	public Energy4Java getRuntime()
+	public GenericUncaughtExceptionHandler getUncaughtExceptionHandler()
 	{
-		return runtime;
+		if (uncaughtExceptionHandler == null) {
+			uncaughtExceptionHandler = new GenericUncaughtExceptionHandler();
+		}
+
+		return uncaughtExceptionHandler;
 	}
 
 	protected ApplicationCore installShutdownHook()
@@ -229,15 +218,17 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 			}
 		};
 
-		Thread runner = new Thread(hook, "Shutdown Hook Thread");
-		runner.setUncaughtExceptionHandler(new GenericUncaughtExceptionHandler());
+		ThreadGroup group =
+			Thread.currentThread()
+			      .getThreadGroup();
+
 		Runtime.getRuntime()
-		       .addShutdownHook(runner);
+		       .addShutdownHook(new Thread(group, hook, Config.shutdownHookName));
 
 		return this;
 	}
 
-	public ApplicationCore launchGui()
+	protected ApplicationCore launchGui()
 	{
 		try {
 			UIManager.setLookAndFeel(properties.getProperty("lnf"));
@@ -252,7 +243,32 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 		return this;
 	}
 
-	public synchronized ApplicationCore passivate()
+	protected ApplicationCore obtainGlobalLock()
+	{
+		try {
+			String path = properties.getProperty("lockFile");
+			File lockFile = utilitySvc.getResource(path);
+
+			globalLock =
+				new FileOutputStream(lockFile)
+					.getChannel()
+					.tryLock();
+
+			if (globalLock == null) {
+				Alert.error(null, application.name() + " is already running", true);
+			}
+
+			return this;
+		}
+		catch (RuntimeException err) {
+			throw err;
+		}
+		catch (Throwable err) {
+			throw new RuntimeException(err);
+		}
+	}
+
+	protected synchronized ApplicationCore passivate()
 	{
 		if (!active) {
 			return this;
@@ -271,6 +287,34 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 		catch (Throwable err) {
 			throw new RuntimeException(err);
 		}
+	}
+
+	@SuppressWarnings("all")
+	protected ApplicationCore registerThreadUncaughtExceptionHandlers()
+	{
+		ThreadGroup group = Thread.currentThread().getThreadGroup();
+		ThreadGroup parent;
+		while ((parent = group.getParent()) != null) {
+			group = parent;
+		}
+
+		Thread[] threads = new Thread[group.activeCount()];
+		group.enumerate(threads, true);
+
+		for (Thread thread : threads) {
+			thread.setUncaughtExceptionHandler(getUncaughtExceptionHandler());
+
+			StringBuilder message = new StringBuilder("Uncaught exception handler registered for thread '");
+			message.append(thread.getName())
+			       .append("' (id ")
+			       .append(thread.getId())
+			       .append(", group ")
+			       .append(thread.getThreadGroup().getName())
+			       .append(")");
+
+			loggerSvc.info(getClass(), message.toString());
+		}
+		return this;
 	}
 
 	@Override
@@ -293,8 +337,7 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		boolean reply = Alert.prompt(gui, "Are you sure you want to quit?");
-		if (!reply) {
+		if (!Alert.prompt(gui, Config.quitPrompt)) {
 			return;
 		}
 
@@ -323,6 +366,20 @@ public class ApplicationCore implements WindowListener, AutoInjectable
 	public void windowOpened(WindowEvent event)
 	{
 		loggerSvc.trace(getClass(), event.toString());
+	}
+
+
+	public static class Config
+	{
+		public static Integer exitSuccess = 0;
+
+		public static Integer exitFailure = 1;
+
+		public static String farewell = "Application complete";
+
+		public static String quitPrompt = "Are you sure you want to quit?";
+
+		public static String shutdownHookName = "Shutdown Hook Thread";
 	}
 
 	static {

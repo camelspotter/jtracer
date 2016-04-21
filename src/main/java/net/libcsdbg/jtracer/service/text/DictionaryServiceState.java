@@ -7,7 +7,7 @@ import org.qi4j.library.constraints.annotation.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
-public interface ParserServiceState
+public interface DictionaryServiceState
 {
 	Property<Boolean> active();
 

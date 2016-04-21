@@ -1,13 +1,13 @@
 package net.libcsdbg.jtracer.core;
 
 import net.libcsdbg.jtracer.component.*;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.text.parser.Tokenizer;
-import net.libcsdbg.jtracer.service.text.ParserService;
-import net.libcsdbg.jtracer.service.text.parser.Token;
-import net.libcsdbg.jtracer.service.config.RegistryService;
+import net.libcsdbg.jtracer.service.text.DictionaryService;
+import net.libcsdbg.jtracer.service.text.parse.Token;
+import net.libcsdbg.jtracer.service.text.parse.Tokenizer;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.common.Visibility;
 import org.qi4j.bootstrap.*;
@@ -30,7 +30,7 @@ public class Assembler implements ApplicationAssembler
 		assembly = factory.newApplicationAssembly();
 		assembly.setMode(properties.getApplicationMode())
 		        .setVersion(properties.getApplicationVersion())
-		        .setName("jTracer");
+		        .setName(properties.getApplicationFullName());
 
 		LayerAssembly layer = assembly.layer("application");
 		ModuleAssembly module = layer.module("service");
@@ -39,7 +39,7 @@ public class Assembler implements ApplicationAssembler
 		registerRegistryService(module);
 		registerComponentService(module);
 		registerUtilityService(module);
-		registerParserService(module);
+		registerDictionaryService(module);
 
 		module = layer.module("util");
 		registerObjects(module);
@@ -54,6 +54,22 @@ public class Assembler implements ApplicationAssembler
 
 		module.services(ComponentService.class)
 		      .identifiedBy("Component Service")
+		      .visibleIn(Visibility.application)
+		      .instantiateOnStartup();
+
+		return this;
+	}
+
+	protected Assembler registerDictionaryService(ModuleAssembly module)
+	{
+		module.values(Token.class)
+		      .visibleIn(Visibility.application);
+
+		module.transients(Tokenizer.class)
+		      .visibleIn(Visibility.application);
+
+		module.services(DictionaryService.class)
+		      .identifiedBy("Dictionary Service")
 		      .visibleIn(Visibility.application)
 		      .instantiateOnStartup();
 
@@ -82,28 +98,13 @@ public class Assembler implements ApplicationAssembler
 		               SessionManager.class,
 		               StatusBar.class,
 		               ToolBar.class,
-		               TraceBar.class,
 		               TracePane.class,
+		               TraceStatusBar.class,
+		               TraceToolBar.class,
 
 		               ApplicationCore.class,
 		               GenericUncaughtExceptionHandler.class)
 		      .visibleIn(Visibility.application);
-
-		return this;
-	}
-
-	protected Assembler registerParserService(ModuleAssembly module)
-	{
-		module.values(Token.class)
-		      .visibleIn(Visibility.application);
-
-		module.transients(Tokenizer.class)
-		      .visibleIn(Visibility.application);
-
-		module.services(ParserService.class)
-		      .identifiedBy("Parser Service")
-		      .visibleIn(Visibility.application)
-		      .instantiateOnStartup();
 
 		return this;
 	}

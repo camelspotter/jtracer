@@ -1,9 +1,9 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.injection.scope.Service;
 
@@ -48,32 +48,29 @@ public class Session extends JFrame implements ActionListener,
 
 	protected JFrame owner;
 
-	protected JToolBar tools;
+	protected TraceStatusBar status;
 
 	protected JTabbedPane tabs;
 
-	protected TraceBar details;
-
+	protected TraceToolBar tools;
 
 	protected List<TracePane> traces;
 
+
+	protected Boolean active;
+
 	protected Socket connection;
+
+	protected Boolean locked;
 
 	protected BufferedReader receiver;
 
 	protected Thread server;
 
-	protected Boolean locked;
-
-	protected Boolean active;
-
 
 	public Session()
 	{
-		super(Config.initialTitle);
-		selfInject();
-
-		this.active = false;
+		this(null, null);
 	}
 
 	public Session(JFrame owner, Socket connection)
@@ -83,58 +80,72 @@ public class Session extends JFrame implements ActionListener,
 
 		this.owner = owner;
 		this.connection = connection;
-		this.locked = false;
-		this.active = false;
-
-		setIconImages(utilitySvc.getProjectIcons());
-
-		try {
-			connection.shutdownOutput();
-			receiver = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-
-			String param = registrySvc.get("timeout");
-			if (param != null) {
-				connection.setSoTimeout(Integer.parseInt(param));
-			}
-		}
-		catch (RuntimeException err) {
-			throw err;
-		}
-		catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-
-		tools = new JToolBar();
-		tools.add(createTool("Remove trace", (ActionListener) owner));
-		tools.add(createTool("Lock", this));
-		tools.addSeparator();
-
-		tools.add(createTool("Select previous", (ActionListener) owner));
-		tools.add(createTool("Select next", (ActionListener) owner));
-		tools.add(createTool("Close", (ActionListener) owner));
-		tools.addSeparator();
-
-		tools.add(createTool("Find", this));
-		add(tools, BorderLayout.NORTH);
-
-		Button tool = (Button) tools.getComponent(0);
-		tool.addActionListener(this);
-
+		active = locked = false;
 		traces = new ArrayList<>();
+
+		/* Setup the UI */
+		status = new TraceStatusBar();
+		add(status, BorderLayout.SOUTH);
+
 		tabs = new JTabbedPane();
-		tabs.addChangeListener(this);
 		tabs.setFont(componentSvc.getFont("component"));
 		tabs.setForeground(componentSvc.getForegroundColor("component"));
+		tabs.addChangeListener(this);
 		add(tabs, BorderLayout.CENTER);
 
-		details = new TraceBar();
-		add(details, BorderLayout.SOUTH);
+		tools = new TraceToolBar(this, (ActionListener) owner);
+		add(tools, BorderLayout.NORTH);
 
+		setIconImages(utilitySvc.getProjectIcons());
 		setSize(componentSvc.getDimension("trace"));
+
+		/* Setup property change events */
 		addPropertyChangeListener("sessionRequest", (PropertyChangeListener) owner);
 		addPropertyChangeListener("traceCount", (PropertyChangeListener) owner);
 
-		server = new Thread(this, Config.threadName);
+		addPropertyChangeListener("hasTraces", tools);
+		firePropertyChange("hasTraces", null, false);
+
+		/* Setup the network I/O or rollback */
+		boolean rollback = false;
+		InputStreamReader socketReader = null;
+		try {
+			connection.shutdownOutput();
+
+			String param = registrySvc.get("network-io-timeout");
+			if (param != null) {
+				connection.setSoTimeout(Integer.parseInt(param));
+			}
+
+			socketReader = new InputStreamReader(connection.getInputStream());
+			receiver = new BufferedReader(socketReader);
+		}
+		catch (RuntimeException err) {
+			rollback = true;
+			throw err;
+		}
+		catch (Throwable err) {
+			rollback = true;
+			throw new RuntimeException(err);
+		}
+		finally {
+			if (rollback) {
+				try {
+					if (socketReader != null) {
+						socketReader.close();
+					}
+
+					connection.close();
+				}
+				catch (Throwable err) {
+					loggerSvc.warning(getClass(), err.getMessage());
+				}
+			}
+		}
+
+		/* Start service thread */
+		ThreadGroup group = Thread.currentThread().getThreadGroup();
+		server = new Thread(group, this, Config.serviceThreadName);
 		server.start();
 
 		synchronized (this) {
@@ -153,55 +164,48 @@ public class Session extends JFrame implements ActionListener,
 	public void actionPerformed(ActionEvent event)
 	{
 		loggerSvc.trace(getClass(), event.toString());
+		String cmd = event.getActionCommand();
 
-		try {
-			String cmd = event.getActionCommand();
-
-			if (cmd.equals("Remove trace")) {
-				int i = tabs.getSelectedIndex();
-				if (i < 0) {
-					return;
-				}
-
-				traces.remove(i);
-				tabs.remove(i);
-
-				int count = tabs.getTabCount();
-				firePropertyChange("traceCount", null, count);
-				if (count != 0) {
-					return;
-				}
-
-				if (!locked) {
-					owner.toFront();
-					dispose();
-					return;
-				}
-
-				tools.getComponent(0).setEnabled(false);
-				tools.getComponent(7).setEnabled(false);
+		if (cmd.equals("Remove trace")) {
+			int i = tabs.getSelectedIndex();
+			if (i < 0) {
+				return;
 			}
 
-			else if (cmd.equals("Lock")) {
-				locked = !locked;
-				Button tool = (Button) tools.getComponent(1);
+			traces.remove(i);
+			tabs.remove(i);
 
-				if (locked) {
-					tool.setIcon(utilitySvc.loadIcon("unlock24.png"));
-					tool.setToolTipText("Unlock");
-				}
-				else {
-					tool.setIcon(utilitySvc.loadIcon("lock24.png"));
-					tool.setToolTipText("Lock");
-				}
+			int count = tabs.getTabCount();
+			firePropertyChange("traceCount", null, count);
+			if (count != 0) {
+				return;
 			}
 
-			else if (cmd.equals("Find")) {
-				Alert.error(this, "Not implemented yet", false);
+			if (!locked) {
+				owner.toFront();
+				dispose();
+				return;
+			}
+
+			firePropertyChange("hasTraces", null, false);
+		}
+
+		else if (cmd.equals("Lock")) {
+			locked = !locked;
+			Button tool = (Button) tools.getComponent(1);
+
+			if (locked) {
+				tool.setIcon(utilitySvc.loadIcon("unlock24.png"));
+				tool.setToolTipText("Unlock");
+			}
+			else {
+				tool.setIcon(utilitySvc.loadIcon("lock24.png"));
+				tool.setToolTipText("Lock");
 			}
 		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+
+		else if (cmd.equals("Find")) {
+			Alert.error(this, "Not implemented yet", false);
 		}
 	}
 
@@ -212,19 +216,19 @@ public class Session extends JFrame implements ActionListener,
 		traces.add(pane);
 
 		String token = request.get("tstamp");
-		details.setTimestamp(Long.parseLong(token, 16));
+		status.setTimestamp(Long.parseLong(token, 16));
 
 		token = request.get("exception");
 		if (token != null) {
-			details.setMessage(token);
+			status.setMessage(token);
 		}
 		else {
-			details.setMessage(Config.defaultStatusMessage);
+			status.setMessage(Config.defaultStatusMessage);
 		}
 
 		InetAddress address = connection.getInetAddress();
 		int port = connection.getPort();
-		details.setAddress(address.getCanonicalHostName(), port);
+		status.setAddress(address.getCanonicalHostName(), port);
 
 		pane.append(request.get("trace"));
 		JPanel view = new JPanel(new BorderLayout());
@@ -264,16 +268,6 @@ public class Session extends JFrame implements ActionListener,
 		tools.getComponent(7).setEnabled(true);
 
 		return this;
-	}
-
-	protected Button createTool(String command, ActionListener handler)
-	{
-		String icon = command.toLowerCase().replace(' ', '_') + "24.png";
-
-		Button retval = new Button(icon, command, handler);
-		retval.setMargin(new Insets(2, 2, 2, 2));
-
-		return retval;
 	}
 
 	public Map<String, String> getRequest() throws IOException
@@ -390,31 +384,26 @@ public class Session extends JFrame implements ActionListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			int i = tabs.getSelectedIndex();
-			if (i < 0) {
-				details.clear();
-				return;
-			}
-
-			tabs.setIconAt(i, utilitySvc.loadIcon("void.png"));
-			TracePane pane = traces.get(i);
-
-			String field = pane.getField("exception");
-			if (field != null) {
-				details.setMessage(field);
-			}
-			else {
-				details.setMessage(Config.defaultStatusMessage);
-			}
-
-			field = pane.getField("tstamp");
-			details.setTimestamp(Long.parseLong(field, 16));
-			details.setAddress(connection.getInetAddress().getCanonicalHostName(), connection.getPort());
+		int i = tabs.getSelectedIndex();
+		if (i < 0) {
+			status.clear();
+			return;
 		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+
+		tabs.setIconAt(i, utilitySvc.loadIcon("void.png"));
+		TracePane pane = traces.get(i);
+
+		String field = pane.getRequestSection("exception");
+		if (field != null) {
+			status.setMessage(field);
 		}
+		else {
+			status.setMessage(Config.defaultStatusMessage);
+		}
+
+		field = pane.getRequestSection("tstamp");
+		status.setTimestamp(Long.parseLong(field, 16));
+		status.setAddress(connection.getInetAddress().getCanonicalHostName(), connection.getPort());
 	}
 
 
@@ -422,12 +411,12 @@ public class Session extends JFrame implements ActionListener,
 	{
 		public static String initialTitle = "Session";
 
-		public static String threadName = "LDP Service Thread";
-
 		public static String defaultStatusMessage = "Thread stack trace";
 
 		public static Integer preallocSize = 256;
 
 		public static Integer requestPreallocSize = 16;
+
+		public static String serviceThreadName = "LDP Service Thread";
 	}
 }

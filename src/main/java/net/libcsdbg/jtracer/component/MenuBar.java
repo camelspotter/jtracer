@@ -1,9 +1,9 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.injection.scope.Service;
 
@@ -90,6 +90,11 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		menu.add(createItem("Preferences...", VK_P, VK_P));
 		menu.addSeparator();
 
+		menu.add(createItem("Lower log level", VK_L, VK_D));
+		menu.add(createItem("Higher log level", VK_H, VK_U));
+		menu.add(createItem("Current log level", VK_C, 0));
+		menu.addSeparator();
+
 		menu.add(createItem("Full screen", VK_U, VK_F11));
 		add(menu);
 
@@ -130,29 +135,23 @@ public class MenuBar extends JMenuBar implements ActionListener,
 	public void actionPerformed(ActionEvent event)
 	{
 		loggerSvc.trace(getClass(), event.toString());
+		String cmd = event.getActionCommand();
 
-		try {
-			String cmd = event.getActionCommand();
-
-			int index = 0;
-			if (cmd.equals("Statusbar")) {
-				index++;
-			}
-			else if (cmd.equals("Always on top")) {
-				index += 2;
-			}
-
-			/* Change the state and icon of the toggle item */
-			boolean state = !toggleStates[index];
-			toggleStates[index] = state;
-			String icon = ((state) ? "on" : "off") + "16.png";
-
-			getMenu(1).getItem(index)
-			          .setIcon(utilitySvc.loadIcon(icon));
+		int index = 0;
+		if (cmd.equals("Statusbar")) {
+			index++;
 		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+		else if (cmd.equals("Always on top")) {
+			index += 2;
 		}
+
+		/* Change the state and icon of the toggle item */
+		boolean state = !toggleStates[index];
+		toggleStates[index] = state;
+		String icon = ((state) ? "on" : "off") + "16.png";
+
+		getMenu(1).getItem(index)
+		          .setIcon(utilitySvc.loadIcon(icon));
 	}
 
 	protected JMenuItem createItem(String text, Integer mnemonic, Integer accelerator)
@@ -263,27 +262,23 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		return this;
 	}
 
+	@Override
 	public void propertyChange(PropertyChangeEvent event)
 	{
 		loggerSvc.debug(getClass(), event.toString());
 
-		try {
-			String key = event.getPropertyName();
-			Object value = event.getNewValue();
+		String key = event.getPropertyName();
+		Object value = event.getNewValue();
 
-			for (int i = getMenuCount() - 1; i >= 0; i--) {
-				JMenu menu = getMenu(i);
+		for (int i = getMenuCount() - 1; i >= 0; i--) {
+			JMenu menu = getMenu(i);
 
-				for (int j = menu.getMenuComponentCount() - 1; j >= 0; j--) {
-					Component c = menu.getMenuComponent(j);
-					if (c instanceof JMenuItem) {
-						renderItem(c, i, j, key, value);
-					}
+			for (int j = menu.getMenuComponentCount() - 1; j >= 0; j--) {
+				Component c = menu.getMenuComponent(j);
+				if (c instanceof JMenuItem) {
+					renderItem(c, i, j, key, value);
 				}
 			}
-		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
 		}
 	}
 

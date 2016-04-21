@@ -137,6 +137,7 @@
 
         <project.description>Stack Trace Visualization Tool</project.description>
         <project.author>Tasos Parisinos</project.author>
+        <project.author.mail>t.parisinos@gmail.com</project.author.mail>
         <project.license>GNU General Public Licence v3</project.license>
     </properties>
 

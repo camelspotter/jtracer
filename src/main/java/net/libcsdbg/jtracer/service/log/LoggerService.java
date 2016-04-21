@@ -14,7 +14,8 @@ import org.qi4j.api.service.ServiceReference;
 
 @Mixins(LoggerService.Mixin.class)
 @Activators(LoggerService.Activator.class)
-public interface LoggerService extends LoggerServiceApi, ServiceComposite
+public interface LoggerService extends LoggerServiceApi,
+                                       ServiceComposite
 {
 	@MixinNote("The default service implementation uses log4j2")
 	public abstract class Mixin implements LoggerService
@@ -24,27 +25,23 @@ public interface LoggerService extends LoggerServiceApi, ServiceComposite
 
 		protected static LogLevel translateLogLevel(Level level)
 		{
-			if (level.equals(Level.TRACE)) {
+			switch (level.name()) {
+			case "TRACE":
 				return LogLevel.trace;
-			}
 
-			else if (level.equals(Level.DEBUG)) {
+			case "DEBUG":
 				return LogLevel.debug;
-			}
 
-			else if (level.equals(Level.INFO)) {
+			case "INFO":
 				return LogLevel.info;
-			}
 
-			else if (level.equals(Level.WARN)) {
+			case "WARN":
 				return LogLevel.warning;
-			}
 
-			else if (level.equals(Level.ERROR)) {
+			case "ERROR":
 				return LogLevel.error;
-			}
 
-			else {
+			default:
 				return LogLevel.fatal;
 			}
 		}

@@ -1,8 +1,7 @@
 package net.libcsdbg.jtracer.service.util;
 
-import net.libcsdbg.jtracer.annotation.Mutable;
-import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.config.RegistryService;
+import net.libcsdbg.jtracer.service.log.LoggerService;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
 import org.qi4j.api.injection.scope.Service;
@@ -19,13 +18,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/* todo Revisit for OS portability */
-
 @Mixins(UtilityService.Mixin.class)
 @Activators(UtilityService.Activator.class)
-public interface UtilityService extends UtilityServiceApi, ServiceComposite
+public interface UtilityService extends UtilityServiceApi,
+                                        ServiceComposite
 {
-	@Mutable
 	public abstract class Mixin implements UtilityService
 	{
 		@Service
@@ -229,7 +226,6 @@ public interface UtilityService extends UtilityServiceApi, ServiceComposite
 	}
 
 
-	@Mutable(false)
 	class Activator extends ActivatorAdapter<ServiceReference<UtilityService>>
 	{
 		@Override

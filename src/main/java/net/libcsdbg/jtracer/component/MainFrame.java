@@ -1,9 +1,10 @@
 package net.libcsdbg.jtracer.component;
 
+import net.libcsdbg.jtracer.core.ApplicationCore;
 import net.libcsdbg.jtracer.core.AutoInjectable;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.injection.scope.Service;
 
@@ -16,9 +17,9 @@ import java.beans.PropertyChangeListener;
 import java.net.*;
 
 public class MainFrame extends JFrame implements ActionListener,
+                                                 AutoInjectable,
                                                  PropertyChangeListener,
-                                                 Runnable,
-                                                 AutoInjectable
+                                                 Runnable
 {
 	private static final long serialVersionUID = 1201750874107334406L;
 
@@ -36,24 +37,24 @@ public class MainFrame extends JFrame implements ActionListener,
 	protected UtilityService utilitySvc;
 
 
-	protected MenuBar menu;
-
-	protected ToolBar tools;
-
-	protected LogPane log;
-
-	protected StatusBar status;
-
 	protected AboutDialog about;
 
 	protected SessionManager desktop;
 
+	protected LogPane log;
 
-	protected ServerSocket listener;
+	protected MenuBar menu;
+
+	protected StatusBar status;
+
+	protected ToolBar tools;
+
 
 	protected Thread daemon;
 
 	protected Boolean daemonActive;
+
+	protected ServerSocket listener;
 
 
 	public MainFrame()
@@ -61,15 +62,15 @@ public class MainFrame extends JFrame implements ActionListener,
 		super();
 		selfInject();
 
-		String name = registrySvc.get("name");
-		setTitle(registrySvc.get("fullName"));
+		String fullName = registrySvc.get("fullName");
+		setTitle(fullName);
 		setIconImages(utilitySvc.getProjectIcons());
 
 		daemonActive = false;
 		menu = new MenuBar(this);
 		tools = new ToolBar(this);
 		log = new LogPane();
-		status = new StatusBar(name + " initialized");
+		status = new StatusBar(registrySvc.get("name") + " initialized");
 
 		desktop = new SessionManager(this);
 		addWindowListener(desktop);
@@ -87,7 +88,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		firePropertyChange("isServing", null, false);
 		firePropertyChange("hasClients", null, false);
 
-		log.appendln("jTracer initialized", "status", true)
+		log.appendln(fullName + " initialized", "status", true)
 		   .appendln("Ready to start serving", "status", true);
 
 		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -99,162 +100,169 @@ public class MainFrame extends JFrame implements ActionListener,
 	public void actionPerformed(ActionEvent event)
 	{
 		loggerSvc.trace(getClass(), event.toString());
+		String cmd = event.getActionCommand();
 
-		try {
-			String cmd = event.getActionCommand();
+		/* Service menu commands */
+		if (cmd.equals("Start")) {
+			startService();
+		}
 
-			/* Service menu commands */
+		else if (cmd.equals("Stop")) {
+			stopService();
+		}
 
-			if (cmd.equals("Start")) {
-				startService();
-			}
+		else if (cmd.equals("Restart")) {
+			log.appendln("Restarting server (reload configuration)...", "status");
+			stopService();
+			startService();
+		}
 
-			else if (cmd.equals("Stop")) {
-				stopService();
-			}
+		else if (cmd.equals("Clear log")) {
+			log.clear();
+		}
 
-			else if (cmd.equals("Restart")) {
-				log.appendln("Restarting server (reload configuration)...", "status");
-				stopService();
-				startService();
-			}
-
-			else if (cmd.equals("Clear log")) {
-				log.clear();
-			}
-
-			else if (cmd.equals("Quit")) {
-				boolean reply = Alert.prompt(this, "Are you sure you want to quit?");
-				if (reply) {
-					dispose();
-				}
-			}
-
-
-			/* View menu commands */
-
-			else if (cmd.equals("Toolbar")) {
-				if (menu.getToggleState(0)) {
-					add(tools, BorderLayout.NORTH);
-				}
-				else {
-					remove(tools);
-				}
-
-				validate();
-			}
-
-			else if (cmd.equals("Statusbar")) {
-				if (menu.getToggleState(1)) {
-					add(status, BorderLayout.SOUTH);
-				}
-				else {
-					remove(status);
-				}
-
-				validate();
-			}
-
-			else if (cmd.equals("Find")) {
-				Alert.error(this, "Not implemented yet", false);
-			}
-
-			else if (cmd.equals("Preferences")) {
-				Alert.error(this, "Not implemented yet", false);
-			}
-
-			else if (cmd.equals("Always on top")) {
-				boolean state = menu.getToggleState(2);
-				setAlwaysOnTop(state);
-				desktop.setAlwaysOnTop(-1, state);
-			}
-
-			else if (cmd.equals("Full screen")) {
-				GraphicsDevice device =
-					GraphicsEnvironment.getLocalGraphicsEnvironment()
-					                   .getDefaultScreenDevice();
-
-				if (!device.isFullScreenSupported()) {
-					loggerSvc.warning(getClass(), "Graphics device '" + device.getIDstring() + "' doesn't support full screen windows");
-					return;
-				}
-
-				JFrame current = (JFrame) device.getFullScreenWindow();
-				if (current == null) {
-					device.setFullScreenWindow(this);
-				}
-				else {
-					device.setFullScreenWindow(null);
-				}
-			}
-
-
-			/* Client menu commands */
-
-			else if (cmd.equals("Select previous")) {
-				desktop.shiftSelection(-1);
-			}
-
-			else if (cmd.equals("Select next")) {
-				desktop.shiftSelection(1);
-			}
-
-			else if (cmd.equals("Close")) {
-				/* This fixes a very tricky bug induced by the OS window manager */
-				toFront();
-				desktop.disposeCurrent();
-			}
-
-			else if (cmd.equals("Cascade")) {
-				desktop.cascade();
-			}
-
-			else if (cmd.equals("Minimize all")) {
-				desktop.setIconified(true);
-			}
-
-			else if (cmd.equals("Restore all")) {
-				desktop.setIconified(false);
-			}
-
-			else if (cmd.equals("Close all")) {
-				boolean reply = Alert.prompt(this, "Close all client windows?");
-				if (reply) {
-					desktop.disposeAll();
-				}
-			}
-
-			else if (cmd.startsWith("Select session")) {
-				String[] parts = cmd.split("\\s");
-				desktop.setCurrent(Integer.valueOf(parts[2]));
-			}
-
-
-			/* Help menu commands */
-
-			else if (cmd.equals("Online documentation") ||
-			         cmd.equals("Bug tracker") ||
-			         cmd.equals("Submit feedback")) {
-				String key = "url-" + cmd.toLowerCase().replace(' ', '-');
-				String url = registrySvc.get(key);
-				utilitySvc.browse(new URL(url));
-			}
-
-			else if (cmd.equals("Check for updates")) {
-				Alert.error(this, "Not implemented yet", false);
-			}
-
-			else if (cmd.startsWith("About")) {
-				if (about == null) {
-					about = new AboutDialog(this);
-				}
-
-				about.setLocationRelativeTo(this);
-				about.setVisible(true);
+		else if (cmd.equals("Quit")) {
+			if (Alert.prompt(this, ApplicationCore.Config.quitPrompt)) {
+				dispose();
 			}
 		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+
+		/* View menu commands */
+		else if (cmd.equals("Toolbar")) {
+			if (menu.getToggleState(0)) {
+				add(tools, BorderLayout.NORTH);
+			}
+			else {
+				remove(tools);
+			}
+
+			validate();
+		}
+
+		else if (cmd.equals("Statusbar")) {
+			if (menu.getToggleState(1)) {
+				add(status, BorderLayout.SOUTH);
+			}
+			else {
+				remove(status);
+			}
+
+			validate();
+		}
+
+		else if (cmd.equals("Always on top")) {
+			boolean state = menu.getToggleState(2);
+			setAlwaysOnTop(state);
+			desktop.setAlwaysOnTop(-1, state);
+		}
+
+		else if (cmd.equals("Find")) {
+			Alert.error(this, "Not implemented yet", false);
+		}
+
+		else if (cmd.equals("Preferences")) {
+			Alert.error(this, "Not implemented yet", false);
+		}
+
+		else if (cmd.equals("Lower log level")) {
+			loggerSvc.logLevelDown();
+			logCurrentLogLevel();
+		}
+
+		else if (cmd.equals("Higher log level")) {
+			loggerSvc.logLevelUp();
+			logCurrentLogLevel();
+		}
+
+		else if (cmd.equals("Current log level")) {
+			logCurrentLogLevel();
+		}
+
+		else if (cmd.equals("Full screen")) {
+			GraphicsDevice device =
+				GraphicsEnvironment.getLocalGraphicsEnvironment()
+				                   .getDefaultScreenDevice();
+
+			if (!device.isFullScreenSupported()) {
+				String message = "Graphics device '" + device.getIDstring() + "' doesn't support full screen windows";
+				log.appendln(message, "alert");
+				loggerSvc.warning(getClass(), message);
+				return;
+			}
+
+			JFrame current = (JFrame) device.getFullScreenWindow();
+			if (current == null) {
+				device.setFullScreenWindow(this);
+			}
+			else {
+				device.setFullScreenWindow(null);
+			}
+		}
+
+		/* Client menu commands */
+		else if (cmd.equals("Select previous")) {
+			desktop.shiftSelection(-1);
+		}
+
+		else if (cmd.equals("Select next")) {
+			desktop.shiftSelection(1);
+		}
+
+		else if (cmd.equals("Close")) {
+			/* This fixes a very tricky bug induced by the OS window manager */
+			toFront();
+			desktop.disposeCurrent();
+		}
+
+		else if (cmd.equals("Cascade")) {
+			desktop.cascade();
+		}
+
+		else if (cmd.equals("Minimize all")) {
+			desktop.setIconified(true);
+		}
+
+		else if (cmd.equals("Restore all")) {
+			desktop.setIconified(false);
+		}
+
+		else if (cmd.equals("Close all")) {
+			if (Alert.prompt(this, "Close all client windows?")) {
+				desktop.disposeAll();
+			}
+		}
+
+		else if (cmd.startsWith("Select session")) {
+			String[] parts = cmd.split("\\s");
+			desktop.setCurrent(Integer.valueOf(parts[2]));
+		}
+
+		/* Help menu commands */
+		else if (cmd.equals("Online documentation") ||
+		         cmd.equals("Bug tracker") ||
+		         cmd.equals("Submit feedback")) {
+			String key = "url-" + cmd.toLowerCase().replace(' ', '-');
+			String url = registrySvc.get(key);
+
+			try {
+				utilitySvc.browse(new URL(url));
+			}
+			catch (MalformedURLException err) {
+				throw new RuntimeException(err);
+			}
+		}
+
+		else if (cmd.equals("Check for updates")) {
+			Alert.error(this, "Not implemented yet", false);
+		}
+
+		else if (cmd.startsWith("About")) {
+			if (about == null) {
+				about = new AboutDialog(this);
+			}
+
+			about.setLocationRelativeTo(this);
+			about.setVisible(true);
 		}
 	}
 
@@ -281,19 +289,17 @@ public class MainFrame extends JFrame implements ActionListener,
 		inset.add(viewport);
 		add(inset, BorderLayout.CENTER);
 
-		/* JTextArea console = new JTextArea("jTracer> ");
-		console.setForeground(Color.decode("0x76a6c7"));
-		nowrap = new JPanel(new BorderLayout());
-		nowrap.add(console);
-		viewport = new JScrollPane(nowrap);
-		viewport.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		return this;
+	}
 
-		bagConstraints.weighty = 0.25;
-		bagConstraints.gridy++;
+	public MainFrame logCurrentLogLevel()
+	{
+		String level =
+			loggerSvc.dynamicLogLevel()
+			         .get()
+			         .name();
 
-		layout.setConstraints(viewport, bagConstraints);
-		inset.add(viewport); */
-
+		log.appendln("The current log level is " + level, "alert");
 		return this;
 	}
 
@@ -302,29 +308,24 @@ public class MainFrame extends JFrame implements ActionListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			String key = event.getPropertyName();
-			Object value = event.getNewValue();
+		String key = event.getPropertyName();
+		Object value = event.getNewValue();
 
-			switch (key) {
-			case "sessionCount":
-				firePropertyChange("hasClients", null, (Integer) value != 0);
+		switch (key) {
+		case "sessionCount":
+			firePropertyChange("hasClients", null, (Integer) value != 0);
 
-			case "traceCount":
-				menu.listSessions(desktop.getSessions(), desktop.getCurrent());
-				status.setIndicators(desktop.getSessionCount(), desktop.getTraceCount());
-				break;
+		case "traceCount":
+			menu.listSessions(desktop.getSessions(), desktop.getCurrent());
+			status.setIndicators(desktop.getSessionCount(), desktop.getTraceCount());
+			break;
 
-			case "currentSession":
-				menu.setSelectedSession((Integer) value);
-				break;
+		case "currentSession":
+			menu.setSelectedSession((Integer) value);
+			break;
 
-			case "sessionRequest":
-				log.appendln((String) value, "data");
-			}
-		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+		case "sessionRequest":
+			log.appendln((String) value, "data");
 		}
 	}
 
@@ -412,7 +413,7 @@ public class MainFrame extends JFrame implements ActionListener,
 				}
 				catch (Throwable err) {
 					if (err instanceof SocketException) {
-						log.appendln("Listener socket session terminated", "alert");
+						log.appendln("Listener socket session terminated", "error");
 					}
 					else {
 						log.appendln(err.getMessage(), "error");

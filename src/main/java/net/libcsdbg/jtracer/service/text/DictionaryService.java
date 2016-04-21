@@ -3,7 +3,7 @@ package net.libcsdbg.jtracer.service.text;
 import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.text.parser.Tokenizer;
+import net.libcsdbg.jtracer.service.text.parse.Tokenizer;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
@@ -23,11 +23,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@Mixins(ParserService.Mixin.class)
-@Activators(ParserService.Activator.class)
-public interface ParserService extends ParserServiceApi, ServiceComposite
+@Mixins(DictionaryService.Mixin.class)
+@Activators(DictionaryService.Activator.class)
+public interface DictionaryService extends DictionaryServiceApi,
+                                           ServiceComposite
 {
-	public abstract class Mixin implements ParserService
+	public abstract class Mixin implements DictionaryService
 	{
 		@Structure
 		protected Module selfContainer;
@@ -40,7 +41,7 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 
 
 		@Override
-		public ParserService activate()
+		public DictionaryService activate()
 		{
 			if (active().get()) {
 				return this;
@@ -97,7 +98,7 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 
 		@Note("Using the same name will overwrite older dictionary data stored under that name")
 		@Override
-		public ParserService loadDictionary(String name)
+		public DictionaryService loadDictionary(String name)
 		{
 			try (BufferedReader reader = getDictionaryReader(name)) {
 				List<String> words = new ArrayList<>();
@@ -152,7 +153,7 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 		}
 
 		@Override
-		public ParserService passivate()
+		public DictionaryService passivate()
 		{
 			if (!active().get()) {
 				return this;
@@ -174,10 +175,10 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 	}
 
 
-	class Activator extends ActivatorAdapter<ServiceReference<ParserService>>
+	class Activator extends ActivatorAdapter<ServiceReference<DictionaryService>>
 	{
 		@Override
-		public void afterActivation(ServiceReference<ParserService> svc) throws Exception
+		public void afterActivation(ServiceReference<DictionaryService> svc) throws Exception
 		{
 			svc.get()
 			   .active()
@@ -187,7 +188,7 @@ public interface ParserService extends ParserServiceApi, ServiceComposite
 		}
 
 		@Override
-		public void beforePassivation(ServiceReference<ParserService> svc) throws Exception
+		public void beforePassivation(ServiceReference<DictionaryService> svc) throws Exception
 		{
 			svc.get().passivate();
 		}

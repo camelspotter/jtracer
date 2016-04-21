@@ -1,9 +1,9 @@
 package net.libcsdbg.jtracer.component;
 
+import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.injection.scope.Service;
 
@@ -15,7 +15,8 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 
-public class StatusBar extends JPanel implements ActionListener, AutoInjectable
+public class StatusBar extends JPanel implements ActionListener,
+                                                 AutoInjectable
 {
 	private static final long serialVersionUID = 159085360087933034L;
 
@@ -27,25 +28,20 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 	protected LoggerService loggerSvc;
 
 	@Service
-	protected RegistryService registrySvc;
-
-	@Service
 	protected UtilityService utilitySvc;
 
 
-	protected Long uptime;
+	protected Map<String, JLabel> fields;
 
 	protected Timer timer;
 
-	protected Map<String, JLabel> fields;
+	protected Long uptime;
 
 
 	public StatusBar()
 	{
-		super();
-		selfInject();
+		this("n/a");
 	}
-
 
 	public StatusBar(String message)
 	{
@@ -53,7 +49,7 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 		selfInject();
 
 		uptime = 0L;
-		fields = new HashMap<>();
+		fields = new HashMap<>(5);
 
 		GridBagLayout layout = new GridBagLayout();
 		GridBagConstraints bagConstraints = new GridBagConstraints();
@@ -91,20 +87,16 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 		add(field);
 	}
 
-
 	@Override
 	public void actionPerformed(ActionEvent event)
 	{
-		try {
-			uptime++;
-			renderUptime();
-		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
-		}
+		loggerSvc.trace(getClass(), event.toString());
+
+		uptime++;
+		renderUptime();
 	}
 
-
+	@Factory
 	protected JPanel createField(String tag, String text)
 	{
 		GridBagLayout layout = new GridBagLayout();
@@ -120,12 +112,12 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 
 		if (tag.equals("status")) {
 			field.setIcon(utilitySvc.loadIcon("stat_ok.png"));
-			field.setIconTextGap(6);
+			field.setIconTextGap(Config.iconTextGap);
 			bagConstraints.weightx = 1;
 			bagConstraints.anchor = GridBagConstraints.EAST;
 		}
 
-		bagConstraints.insets = new Insets(1, 8, 1, 8);
+		bagConstraints.insets = componentSvc.getInsets("status");
 		layout.setConstraints(field, bagConstraints);
 		retval.add(field);
 
@@ -133,7 +125,7 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 		return retval;
 	}
 
-
+	@SuppressWarnings("all")
 	protected StatusBar renderUptime()
 	{
 		long now = uptime;
@@ -143,15 +135,23 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 		long minutes = now / 60;
 		long seconds = now % 60;
 
-		String tm = "Uptime ";
-		tm += ((hours < 10) ? "0" : "") + hours + ":";
-		tm += ((minutes < 10) ? "0" : "") + minutes + ":";
-		tm += ((seconds < 10) ? "0" : "") + seconds;
+		StringBuilder builder = new StringBuilder("Uptime ");
+		builder.append((hours < 10) ? "0" : "")
+		       .append(hours)
+		       .append(":")
 
-		fields.get("uptime").setText(tm);
+		       .append((minutes < 10) ? "0" : "")
+		       .append(minutes)
+		       .append(":")
+
+		       .append((seconds < 10) ? "0" : "")
+		       .append(seconds);
+
+		fields.get("uptime")
+		      .setText(builder.toString());
+
 		return this;
 	}
-
 
 	public StatusBar setIndicator(String name, Integer count)
 	{
@@ -171,12 +171,10 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 		return this;
 	}
 
-
 	public StatusBar setIndicators(Integer sessions, Integer traces)
 	{
 		return setIndicator("session", sessions).setIndicator("trace", traces);
 	}
-
 
 	public StatusBar setMessage(final String message, final Boolean normal)
 	{
@@ -208,7 +206,6 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 		return this;
 	}
 
-
 	public StatusBar startUptimeTimer()
 	{
 		/* If the rendering is done by the event dispatching thread */
@@ -235,7 +232,6 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 
 		return this;
 	}
-
 
 	public StatusBar stopUptimeTimer(final Boolean reset, final Boolean normal)
 	{
@@ -271,9 +267,14 @@ public class StatusBar extends JPanel implements ActionListener, AutoInjectable
 		return this;
 	}
 
-
 	public StatusBar stopUptimeTimer()
 	{
 		return stopUptimeTimer(true, true);
+	}
+
+
+	public static class Config
+	{
+		public static Integer iconTextGap = 6;
 	}
 }

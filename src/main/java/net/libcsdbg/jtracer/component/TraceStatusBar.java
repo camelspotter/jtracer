@@ -1,19 +1,20 @@
 package net.libcsdbg.jtracer.component;
 
+import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
-import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.config.RegistryService;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TraceBar extends JPanel implements AutoInjectable
+public class TraceStatusBar extends JPanel implements AutoInjectable
 {
 	private static final long serialVersionUID = 8901737228941794556L;
 
@@ -21,17 +22,11 @@ public class TraceBar extends JPanel implements AutoInjectable
 	@Service
 	protected ComponentService componentSvc;
 
-	@Service
-	protected LoggerService loggerSvc;
-
-	@Service
-	protected RegistryService registrySvc;
-
 
 	protected Map<String, JLabel> fields;
 
 
-	public TraceBar()
+	public TraceStatusBar()
 	{
 		super();
 		selfInject();
@@ -63,16 +58,16 @@ public class TraceBar extends JPanel implements AutoInjectable
 		add(field);
 	}
 
-	public TraceBar clear()
+	public TraceStatusBar clear()
 	{
 		fields.get("message")
-		      .setText("n/a");
+		      .setText(Config.undefinedValue);
 
 		fields.get("timestamp")
-		      .setText("n/a");
+		      .setText(Config.undefinedValue);
 
 		fields.get("address")
-		      .setText("n/a");
+		      .setText(Config.undefinedValue);
 
 		return this;
 	}
@@ -86,7 +81,7 @@ public class TraceBar extends JPanel implements AutoInjectable
 		retval.setBackground(componentSvc.getBackgroundColor("status"));
 		retval.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 
-		JLabel field = new JLabel("n/a");
+		JLabel field = new JLabel(Config.undefinedValue);
 		field.setFont(componentSvc.getFont("status"));
 		field.setForeground(componentSvc.getForegroundColor("status"));
 
@@ -95,7 +90,7 @@ public class TraceBar extends JPanel implements AutoInjectable
 			bagConstraints.anchor = GridBagConstraints.EAST;
 		}
 
-		bagConstraints.insets = new Insets(1, 8, 1, 8);
+		bagConstraints.insets = componentSvc.getInsets("status");
 		layout.setConstraints(field, bagConstraints);
 		retval.add(field);
 
@@ -103,7 +98,7 @@ public class TraceBar extends JPanel implements AutoInjectable
 		return retval;
 	}
 
-	public TraceBar setAddress(String address, int port)
+	public TraceStatusBar setAddress(String address, Integer port)
 	{
 		fields.get("address")
 		      .setText(address + ":" + port);
@@ -111,7 +106,7 @@ public class TraceBar extends JPanel implements AutoInjectable
 		return this;
 	}
 
-	public TraceBar setField(String name, String text)
+	public TraceStatusBar setField(String name, String text)
 	{
 		fields.get(name)
 		      .setText(text);
@@ -119,7 +114,7 @@ public class TraceBar extends JPanel implements AutoInjectable
 		return this;
 	}
 
-	public TraceBar setMessage(String message)
+	public TraceStatusBar setMessage(String message)
 	{
 		fields.get("message")
 		      .setText(message);
@@ -127,44 +122,50 @@ public class TraceBar extends JPanel implements AutoInjectable
 		return this;
 	}
 
-	/* todo Use locales to output dates */
-	public TraceBar setTimestamp(Long timestamp)
+	@Note("Timestamp is in microseconds")
+	public TraceStatusBar setTimestamp(Long timestamp)
 	{
-		Calendar c = Calendar.getInstance();
-		c.setTimeInMillis(timestamp / 1000);
+		Instant seconds = Instant.ofEpochMilli(timestamp / 1000);
+		ZonedDateTime now = ZonedDateTime.ofInstant(seconds, ZoneId.systemDefault());
 
-		int d1 = c.get(Calendar.DATE);
-		int d2 = c.get(Calendar.MONTH) + 1;
-		int d3 = c.get(Calendar.YEAR);
+		StringBuilder text = new StringBuilder(Config.preallocSize);
+		int temporal = now.getDayOfMonth();
+		text.append((temporal < 10) ? "0" : "")
+		    .append(temporal)
+		    .append("/");
 
-		StringBuilder text = new StringBuilder();
-		text.append((d1 < 10) ? "0" : "")
-		    .append(d1)
+		temporal = now.getMonthValue();
+		text.append((temporal < 10) ? "0" : "")
+		    .append(temporal)
 		    .append("/")
-
-		    .append((d2 < 10) ? "0" : "")
-		    .append(d2).append("/")
-		    .append(d3)
+		    .append(now.getYear())
 		    .append(" ");
 
-		int h1 = c.get(Calendar.HOUR);
-		int h2 = c.get(Calendar.MINUTE);
-		int h3 = c.get(Calendar.SECOND);
+		temporal = now.getHour();
+		text.append((temporal < 10) ? "0" : "")
+		    .append(temporal)
+		    .append(":");
 
-		text.append((h1 < 10) ? "0" : "")
-		    .append(h1)
-		    .append(":")
+		temporal = now.getMinute();
+		text.append((temporal < 10) ? "0" : "")
+		    .append(temporal)
+		    .append(":");
 
-		    .append((h2 < 10) ? "0" : "")
-		    .append(h2)
-		    .append(":")
-
-		    .append((h3 < 10) ? "0" : "")
-		    .append(h3);
+		temporal = now.getSecond();
+		text.append((temporal < 10) ? "0" : "")
+		    .append(temporal);
 
 		fields.get("timestamp")
 		      .setText(text.toString());
 
 		return this;
+	}
+
+
+	public static class Config
+	{
+		public static Integer preallocSize = 64;
+
+		public static String undefinedValue = "n/a";
 	}
 }

@@ -1,9 +1,9 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.config.RegistryService;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
@@ -12,6 +12,8 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import java.awt.*;
+
+/* todo Finalize look and feel, colors */
 
 public class LogPane extends JTextPane implements AutoInjectable
 {
@@ -34,8 +36,9 @@ public class LogPane extends JTextPane implements AutoInjectable
 		selfInject();
 
 		Style style =
-			addStyle("debug", StyleContext.getDefaultStyleContext()
-			                              .getStyle(StyleContext.DEFAULT_STYLE));
+			addStyle("debug",
+			         StyleContext.getDefaultStyleContext()
+			                     .getStyle(StyleContext.DEFAULT_STYLE));
 
 		/* Create paragraph style attributes */
 		String param = registrySvc.get("log-padding");
@@ -71,11 +74,11 @@ public class LogPane extends JTextPane implements AutoInjectable
 		style = addStyle("data", style);
 		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-data"));
 
-		style = addStyle("alert", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-alert"));
-
 		style = addStyle("error", style);
 		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-error"));
+
+		style = addStyle("alert", style);
+		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-alert"));
 
 		/* Set selection colors */
 		setSelectionColor(componentSvc.getBackgroundColor("log-selection"));
@@ -127,6 +130,7 @@ public class LogPane extends JTextPane implements AutoInjectable
 
 	public LogPane appendln(String line, String tag, Boolean... sync)
 	{
+		append(tag + "> ", "debug", sync);
 		return append(line + "\n", tag, sync);
 	}
 

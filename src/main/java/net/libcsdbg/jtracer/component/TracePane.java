@@ -1,12 +1,12 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.text.parser.Tokenizer;
-import net.libcsdbg.jtracer.service.text.ParserService;
-import net.libcsdbg.jtracer.service.text.parser.Token;
-import net.libcsdbg.jtracer.service.config.RegistryService;
+import net.libcsdbg.jtracer.service.text.DictionaryService;
+import net.libcsdbg.jtracer.service.text.parse.Token;
+import net.libcsdbg.jtracer.service.text.parse.Tokenizer;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
@@ -17,7 +17,6 @@ import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class TracePane extends JTextPane implements AutoInjectable
 {
@@ -28,44 +27,48 @@ public class TracePane extends JTextPane implements AutoInjectable
 	protected ComponentService componentSvc;
 
 	@Service
+	protected DictionaryService dictionarySvc;
+
+	@Service
 	protected LoggerService loggerSvc;
 
 	@Service
 	protected RegistryService registrySvc;
 
-	@Service
-	protected ParserService parserSvc;
 
-
-	protected Map<String, String> details;
+	protected Map<String, String> request;
 
 
 	public TracePane()
 	{
 		super();
 		selfInject();
-		details = new HashMap<>();
+		request = new HashMap<>();
 	}
 
 	public TracePane(Map<String, String> request)
 	{
 		super();
 		selfInject();
-		details = request;
+		this.request = request;
 
-		Style style = addStyle("plain", StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE));
+		/* Create the default style */
+		Style style =
+			addStyle("plain",
+			         StyleContext.getDefaultStyleContext()
+			                     .getStyle(StyleContext.DEFAULT_STYLE));
 
 		/* Create paragraph style attributes */
 		String param = registrySvc.get("trace-padding");
 		if (param != null) {
-			Integer padding = Integer.parseInt(param);
+			Integer padding = Integer.parseInt(param.trim());
 			StyleConstants.setLeftIndent(style, padding);
 			StyleConstants.setRightIndent(style, padding);
 		}
 
 		param = registrySvc.get("trace-line-height");
 		if (param != null) {
-			StyleConstants.setLineSpacing(style, Float.parseFloat(param));
+			StyleConstants.setLineSpacing(style, Float.parseFloat(param.trim()));
 		}
 
 		StyleConstants.setAlignment(style, StyleConstants.ALIGN_JUSTIFIED);
@@ -73,36 +76,23 @@ public class TracePane extends JTextPane implements AutoInjectable
 
 		/* Setup the default (plain) style */
 		Font font = componentSvc.getFont("trace");
-		if (font != null) {
-			StyleConstants.setFontFamily(style, font.getFamily());
-			StyleConstants.setFontSize(style, font.getSize());
-			StyleConstants.setBold(style, font.isBold());
-			StyleConstants.setItalic(style, font.isItalic());
-		}
+		StyleConstants.setFontFamily(style, font.getFamily());
+		StyleConstants.setFontSize(style, font.getSize());
+		StyleConstants.setBold(style, font.isBold());
+		StyleConstants.setItalic(style, font.isItalic());
 
 		StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-plain"));
 
 		/* Based on the default style create a style for each type of token */
-		style = addStyle("keyword", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-keyword"));
+		for (Token.Type type : Token.Type.values()) {
+			String name = type.name();
+			if (name.equals("plain")) {
+				continue;
+			}
 
-		style = addStyle("type", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-type"));
-
-		style = addStyle("number", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-number"));
-
-		style = addStyle("file", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-file"));
-
-		style = addStyle("delimiter", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-delimiter"));
-
-		style = addStyle("scope", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-scope"));
-
-		style = addStyle("function", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-function"));
+			style = addStyle(name, style);
+			StyleConstants.setForeground(style, componentSvc.getForegroundColor("trace-" + name));
+		}
 
 		/* Set selection colors */
 		setSelectionColor(componentSvc.getBackgroundColor("trace-selection"));
@@ -115,99 +105,43 @@ public class TracePane extends JTextPane implements AutoInjectable
 
 	public TracePane append(String trace)
 	{
-		Tokenizer analyzer = parserSvc.getTokenizer("[\\s\\{\\}\\(\\)\\*&,:<>]+", trace);
+		Tokenizer tokenizer = dictionarySvc.getTokenizer(Tokenizer.Mixin.Config.grammar, trace);
 
-		Token t = analyzer.next();
-		while (t != null) {
-			append(t.text().get(),
-			       t.type()
-			        .get()
-			        .name());
-
-			append(t.delimiter().get(), "delimiter");
-			t = analyzer.next();
+		Token token;
+		while ((token = tokenizer.next()) != null) {
+			append(token);
 		}
 
-		if (analyzer.hasRemainder()) {
-			t = analyzer.remainder();
-			append(t.text().get(), t.type().get().name());
+		if (tokenizer.hasRemainder()) {
+			append(tokenizer.remainder());
 		}
-
-		/* Delimiters /
-		String expr = "[\\s\\{\\}\\(\\)\\*&,:<>]+";
-
-		Pattern regexp = Pattern.compile(expr);
-		Matcher parser = regexp.matcher(trace);
-
-		/* Parse the trace and append it word-by-word doing syntax highlighting /
-		int offset = 0;
-		String prev = null;
-		while (parser.find()) {
-			String grp = parser.group();
-			String token = trace.substring(offset, parser.start());
-			offset = parser.end();
-
-			append(token, prev, grp);
-			append(grp, "delimiter");
-			prev = grp;
-		}
-
-		if (offset < trace.length() - 1) {
-			append(trace.substring(offset), prev, null);
-		} */
 
 		return this;
 	}
 
-	public TracePane append(String token, String prev, String next)
+	public TracePane append(Token token)
 	{
-		String num = "(0x)?\\p{XDigit}+$";
+		append(token.text().get(),
+		       token.type()
+		            .get()
+		            .name());
 
-		/* Highlight decimal and hex numbers */
-		if (token.matches(num)) {
-			append(token, "number");
-		}
-
-		/* Highlight file names */
-		else if (parserSvc.lookup(token, "extension", true)) {
-			append(token, "file");
-		}
-
-		/* Highlight C++ integral types */
-		else if (parserSvc.lookup(token, "type", false)) {
-			append(token, "type");
-		}
-
-		/* Highlight C++ keywords (apart those for integral types) */
-		else if (parserSvc.lookup(token, "keyword", false)) {
-			append(token, "keyword");
-		}
-
-		/* Highlight C++ namespaces and classes */
-		else if (next.equals("::")) {
-			append(token, "scope");
-		}
-
-		/* Highlight function names */
-		else if (next.equals("(") || next.equals("<") || next.startsWith("\n")) {
-			append(token, "function");
-		}
-
-		else {
-			append(token, "plain");
+		String delimiter = token.delimiter().get();
+		if (delimiter != null) {
+			return append(delimiter, "delimiter");
 		}
 
 		return this;
 	}
 
-	public TracePane append(String line, String tag)
+	public TracePane append(String text, String tag)
 	{
 		try {
 			Document doc = getDocument();
 			int length = doc.getLength();
 
-			doc.insertString(length, line, getStyle(tag));
-			setCaretPosition(length + line.length());
+			doc.insertString(length, text, getStyle(tag));
+			setCaretPosition(length + text.length());
 		}
 		catch (Throwable err) {
 			loggerSvc.catching(getClass(), err);
@@ -216,32 +150,8 @@ public class TracePane extends JTextPane implements AutoInjectable
 		return this;
 	}
 
-	public TracePane appendln(String line, String tag)
+	public String getRequestSection(String section)
 	{
-		return append(line + "\n", tag);
-	}
-
-	public TracePane clear()
-	{
-		try {
-			Document doc = getDocument();
-			doc.remove(0, doc.getLength());
-			setCaretPosition(0);
-		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
-		}
-
-		return this;
-	}
-
-	public String getField(String key)
-	{
-		return details.get(key);
-	}
-
-	public Set<String> getFieldKeys()
-	{
-		return details.keySet();
+		return request.get(section);
 	}
 }

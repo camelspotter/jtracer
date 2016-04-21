@@ -1,4 +1,4 @@
-package net.libcsdbg.jtracer.service.text.parser;
+package net.libcsdbg.jtracer.service.text.parse;
 
 import org.qi4j.api.common.Optional;
 import org.qi4j.api.property.Property;

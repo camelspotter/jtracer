@@ -1,8 +1,8 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.AutoInjectable;
-import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.config.RegistryService;
+import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.injection.scope.Service;
 
@@ -39,18 +39,18 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 	{
 		super(owner, true);
 		selfInject();
-		setTitle("About " + registrySvc.get("name"));
+		setTitle("About " + registrySvc.get("fullName"));
 
 		try {
-			File page = utilitySvc.getResource("theme/common/about.html");
+			File page = utilitySvc.getResource(Config.page);
 			JEditorPane viewer = new JEditorPane(page.toURI().toURL());
 
 			viewer.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, true);
 			viewer.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);
 			viewer.setEditable(false);
 			viewer.setFocusable(false);
-			viewer.setMargin(new Insets(0, 0, 0, 0));
-			viewer.setPreferredSize(new Dimension(360, 406));
+			viewer.setMargin(Config.preferredMargin);
+			viewer.setPreferredSize(Config.preferredSize);
 
 			viewer.addHyperlinkListener(this);
 			add(viewer, BorderLayout.CENTER);
@@ -69,33 +69,39 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 		pack();
 	}
 
+	@Override
 	public void hyperlinkUpdate(HyperlinkEvent event)
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		try {
-			if (event.getEventType() != HyperlinkEvent.EventType.ACTIVATED) {
-				return;
-			}
-
-			URL url = event.getURL();
-			String proto = url.getProtocol();
-
-			switch (proto) {
-			case "file":
-				setVisible(false);
-				break;
-
-			case "mailto":
-				utilitySvc.mailTo(url);
-				break;
-
-			case "http":
-				utilitySvc.browse(url);
-			}
+		if (event.getEventType() != HyperlinkEvent.EventType.ACTIVATED) {
+			return;
 		}
-		catch (Throwable err) {
-			loggerSvc.catching(getClass(), err);
+
+		URL url = event.getURL();
+		String proto = url.getProtocol();
+
+		switch (proto) {
+		case "file":
+			setVisible(false);
+			break;
+
+		case "mailto":
+			utilitySvc.mailTo(url);
+			break;
+
+		case "http":
+			utilitySvc.browse(url);
 		}
+	}
+
+
+	public static class Config
+	{
+		public static String page = "theme/common/about.html";
+
+		public static Insets preferredMargin = new Insets(0, 0, 0, 0);
+
+		public static Dimension preferredSize = new Dimension(360, 406);
 	}
 }
