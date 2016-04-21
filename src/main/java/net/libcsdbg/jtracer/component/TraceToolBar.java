@@ -4,6 +4,7 @@ import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
+import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
@@ -15,7 +16,7 @@ import java.beans.PropertyChangeListener;
 public class TraceToolBar extends JToolBar implements PropertyChangeListener,
                                                       AutoInjectable
 {
-	private static final long serialVersionUID = -2420200801025032444L;
+	private static final long serialVersionUID = 5454066943250445711L;
 
 
 	@Service
@@ -23,6 +24,9 @@ public class TraceToolBar extends JToolBar implements PropertyChangeListener,
 
 	@Service
 	protected LoggerService loggerSvc;
+
+	@Service
+	protected UtilityService utilitySvc;
 
 
 	public TraceToolBar()
@@ -84,14 +88,26 @@ public class TraceToolBar extends JToolBar implements PropertyChangeListener,
 
 	protected TraceToolBar renderTool(Component c, Integer index, String key, Object value)
 	{
-		Boolean enabled = (Boolean) value;
-
 		if (key.equals("hasTraces")) {
 			switch (index) {
 			case 0:
 			case 7:
-				c.setEnabled(enabled);
+				c.setEnabled((Boolean) value);
 			}
+		}
+
+		else if (!key.equals("isLocked") || index != 1) {
+			return this;
+		}
+
+		Button tool = (Button) c;
+		if ((Boolean) value) {
+			tool.setIcon(utilitySvc.loadIcon("unlock24.png"));
+			tool.setToolTipText("Unlock");
+		}
+		else {
+			tool.setIcon(utilitySvc.loadIcon("lock24.png"));
+			tool.setToolTipText("Lock");
 		}
 
 		return this;

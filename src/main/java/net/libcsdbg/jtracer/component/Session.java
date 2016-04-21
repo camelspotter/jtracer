@@ -104,7 +104,9 @@ public class Session extends JFrame implements ActionListener,
 		addPropertyChangeListener("traceCount", (PropertyChangeListener) owner);
 
 		addPropertyChangeListener("hasTraces", tools);
+		addPropertyChangeListener("isLocked", tools);
 		firePropertyChange("hasTraces", null, false);
+		firePropertyChange("isLocked", null, false);
 
 		/* Setup the network I/O or rollback */
 		boolean rollback = false;
@@ -192,16 +194,7 @@ public class Session extends JFrame implements ActionListener,
 
 		else if (cmd.equals("Lock")) {
 			locked = !locked;
-			Button tool = (Button) tools.getComponent(1);
-
-			if (locked) {
-				tool.setIcon(utilitySvc.loadIcon("unlock24.png"));
-				tool.setToolTipText("Unlock");
-			}
-			else {
-				tool.setIcon(utilitySvc.loadIcon("lock24.png"));
-				tool.setToolTipText("Lock");
-			}
+			firePropertyChange("isLocked", null, locked);
 		}
 
 		else if (cmd.equals("Find")) {
