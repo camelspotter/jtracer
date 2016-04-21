@@ -94,6 +94,8 @@ public class TraceToolBar extends JToolBar implements PropertyChangeListener,
 			case 7:
 				c.setEnabled((Boolean) value);
 			}
+
+			return this;
 		}
 
 		else if (!key.equals("isLocked") || index != 1) {
