@@ -1,5 +1,6 @@
 package net.libcsdbg.jtracer.component;
 
+import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
@@ -99,12 +100,12 @@ public class Session extends JFrame implements ActionListener,
 		setIconImages(utilitySvc.getProjectIcons());
 		setSize(componentSvc.getDimension("trace"));
 
-		/* Setup property change events */
+		/* Setup (and fire initial) property change events */
 		addPropertyChangeListener("sessionRequest", (PropertyChangeListener) owner);
 		addPropertyChangeListener("traceCount", (PropertyChangeListener) owner);
-
 		addPropertyChangeListener("hasTraces", tools);
 		addPropertyChangeListener("isLocked", tools);
+
 		firePropertyChange("hasTraces", null, false);
 		firePropertyChange("isLocked", null, false);
 
@@ -206,44 +207,46 @@ public class Session extends JFrame implements ActionListener,
 	public Session addTrace(Map<String, String> request)
 	{
 		TracePane pane = new TracePane(request);
+		pane.append(request.get("trace"));
+		pane.setMargin(componentSvc.getInsets("trace"));
 		traces.add(pane);
 
-		String token = request.get("tstamp");
-		status.setTimestamp(Long.parseLong(token, 16));
+		/* Setup the trace tab viewport */
+		JPanel view = new JPanel(new BorderLayout());
+		view.add(pane, BorderLayout.CENTER);
+		JScrollPane viewport = new JScrollPane(view);
+		viewport.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-		token = request.get("exception");
-		if (token != null) {
-			status.setMessage(token);
+		tabs.addTab("Thread " + request.get("tid").toLowerCase(), utilitySvc.loadIcon("new.png"), viewport);
+
+		/* Set status bar fields */
+		status.setTimestamp(Long.parseLong(request.get("tstamp"), 16));
+
+		String header = request.get("exception");
+		if (header != null) {
+			status.setMessage(header);
 		}
 		else {
 			status.setMessage(Config.defaultStatusMessage);
 		}
 
+		/* Set once, only over n/a */
 		InetAddress address = connection.getInetAddress();
 		int port = connection.getPort();
 		status.setAddress(address.getCanonicalHostName(), port);
 
-		pane.append(request.get("trace"));
-		JPanel view = new JPanel(new BorderLayout());
-		view.add(pane);
-		pane.setMargin(new Insets(6, 2, 0, 2));
-
-		JScrollPane viewport = new JScrollPane(view);
-		viewport.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		tabs.addTab("Thread " + request.get("tid"), utilitySvc.loadIcon("new.png"), viewport);
-
-		String path = request.get("path");
-		int pid = Integer.parseInt(request.get("pid"), 16);
+		/* Customize session frame title (set once, only over n/a) */
 		String ip = address.getHostAddress();
+		String path = request.get("path");
+		String pid = request.get("pid");
 		setTitle(path + " (" + pid + "@" + ip + ")");
 
-		int length = request.get("request").length();
+		/* Logged message */
 		StringBuilder message = new StringBuilder(Config.preallocSize);
 		message.append("Read ")
-		       .append(length)
-		       .append(" bytes ")
+		       .append(request.get("request").length())
+		       .append(" bytes for ")
 
-		       .append("for ")
 		       .append(path)
 		       .append(" (")
 		       .append(pid)
@@ -254,28 +257,33 @@ public class Session extends JFrame implements ActionListener,
 		       .append(port)
 		       .append(")");
 
+		/* Notify listeners */
 		firePropertyChange("sessionRequest", null, message.toString());
 		firePropertyChange("traceCount", null, tabs.getTabCount());
-
-		tools.getComponent(0).setEnabled(true);
-		tools.getComponent(7).setEnabled(true);
+		firePropertyChange("hasTraces", null, true);
 
 		return this;
 	}
 
+	@Note("Protocol implementation")
 	public Map<String, String> getRequest() throws IOException
 	{
+		Map<String, String> retval = new HashMap<>(Config.requestPreallocSize);
+
 		int count = 0;
-		boolean text = false;
-		StringBuilder buffer = new StringBuilder(Config.preallocSize);
-		StringBuilder trace = new StringBuilder(Config.preallocSize);
+		boolean isBody = false;
 
 		/* Read a line at a time and parse it */
-		Map<String, String> retval = new HashMap<>(Config.requestPreallocSize);
+		StringBuilder buffer = new StringBuilder(Config.preallocSize);
+		StringBuilder trace = new StringBuilder(Config.preallocSize);
 		do {
 			String line = receiver.readLine();
 			if (line == null) {
-				throw new IOException("The peer disconnected prematurely");
+				if (count != 0) {
+					throw new IOException("The peer disconnected prematurely");
+				}
+
+				return null;
 			}
 
 			count++;
@@ -283,35 +291,36 @@ public class Session extends JFrame implements ActionListener,
 			      .append("\n");
 
 			if (line.length() == 0) {
-				text = true;
+				isBody = true;
 				continue;
 			}
 
-			if (text) {
+			if (isBody) {
 				trace.append(line)
 				     .append("\n");
 
 				continue;
 			}
 
-			String[] header = line.split(":");
-			if (header.length < 2 || header[0].trim().length() == 0) {
+			int mark = line.indexOf(":");
+			if (mark <= 0) {
 				throw new ProtocolException("LDP request format error (" + count + ": " + line + ")");
 			}
 
-			StringBuilder field = new StringBuilder(header[1]);
-			for (int i = 2; i < header.length; i++) {
-				field.append(":")
-				     .append(header[i]);
+			String header = line.substring(0, mark).trim();
+			String field = line.substring(mark + 1).trim();
+			if (header.length() == 0 || field.length() == 0) {
+				throw new ProtocolException("LDP request format error (" + count + ": " + line + ")");
 			}
 
-			retval.put(header[0].trim(), field.toString().trim());
+			retval.put(header, field);
 		}
 		while (!buffer.toString().endsWith("}\n\n"));
 
 		retval.put("trace", trace.toString().trim());
 		retval.put("request", buffer.toString().trim());
-		return retval;
+
+		return validateRequest(retval);
 	}
 
 	public Integer getTraceCount()
@@ -327,8 +336,16 @@ public class Session extends JFrame implements ActionListener,
 	public Session quit()
 	{
 		try {
-			connection.close();
-			receiver.close();
+			if (receiver != null) {
+				receiver.close();
+			}
+
+			if (connection != null) {
+				connection.close();
+			}
+
+			receiver = null;
+			connection = null;
 		}
 		catch (Throwable ignored) {
 		}
@@ -347,7 +364,16 @@ public class Session extends JFrame implements ActionListener,
 		/* Listen for incoming connections */
 		while (server == Thread.currentThread()) {
 			try {
-				addTrace(getRequest());
+				Map<String, String> request = getRequest();
+
+				/* Indication the peer keep-alive socket has closed, session goes inactive */
+				if (request == null) {
+					quit();
+					server = null;
+					continue;
+				}
+
+				addTrace(request);
 			}
 			catch (Throwable err) {
 				loggerSvc.catching(getClass(), err);
@@ -394,22 +420,46 @@ public class Session extends JFrame implements ActionListener,
 			status.setMessage(Config.defaultStatusMessage);
 		}
 
-		field = pane.getRequestSection("tstamp");
-		status.setTimestamp(Long.parseLong(field, 16));
+		status.setTimestamp(Long.parseLong(pane.getRequestSection("tstamp"), 16));
 		status.setAddress(connection.getInetAddress().getCanonicalHostName(), connection.getPort());
 	}
 
+	protected Map<String, String> validateRequest(Map<String, String> request)
+	{
+		/* Search mandatory headers */
+		for (String header : Config.mandatoryRequestHeaders) {
+			String value = request.get(header);
+
+			if (value == null || value.length() == 0) {
+				throw new IllegalStateException("Request doesn't contain a mandatory header (" + header + ")");
+			}
+		}
+
+		for (String header : request.keySet()) {
+			String value = request.get(header);
+
+			if (value == null || value.length() == 0) {
+				request.remove(header);
+			}
+		}
+
+		return request;
+	}
 
 	public static class Config
 	{
-		public static String initialTitle = "Session";
-
-		public static String defaultStatusMessage = "Thread stack trace";
-
 		public static Integer preallocSize = 256;
 
 		public static Integer requestPreallocSize = 16;
 
+
+		public static String initialTitle = "Session";
+
+		public static String defaultStatusMessage = "Thread stack trace";
+
 		public static String serviceThreadName = "LDP Service Thread";
+
+
+		public static String[] mandatoryRequestHeaders = { "path", "pid", "request", "tid", "trace", "tstamp" };
 	}
 }

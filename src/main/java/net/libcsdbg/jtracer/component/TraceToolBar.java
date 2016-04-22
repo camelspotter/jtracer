@@ -88,28 +88,29 @@ public class TraceToolBar extends JToolBar implements PropertyChangeListener,
 
 	protected TraceToolBar renderTool(Component c, Integer index, String key, Object value)
 	{
-		if (key.equals("hasTraces")) {
-			switch (index) {
-			case 0:
-			case 7:
-				c.setEnabled((Boolean) value);
+		boolean flag = (Boolean) value;
+
+		switch (key) {
+		case "hasTraces":
+			if (index == 0 || index == 7) {
+				c.setEnabled(flag);
 			}
 
-			return this;
-		}
+			break;
 
-		else if (!key.equals("isLocked") || index != 1) {
-			return this;
-		}
+		case "isLocked":
+			Button tool = (Button) c;
 
-		Button tool = (Button) c;
-		if ((Boolean) value) {
-			tool.setIcon(utilitySvc.loadIcon("unlock24.png"));
-			tool.setToolTipText("Unlock");
-		}
-		else {
-			tool.setIcon(utilitySvc.loadIcon("lock24.png"));
-			tool.setToolTipText("Lock");
+			if (index == 1) {
+				if (flag) {
+					tool.setIcon(utilitySvc.loadIcon("unlock24.png"));
+					tool.setToolTipText("Unlock");
+				}
+				else {
+					tool.setIcon(utilitySvc.loadIcon("lock24.png"));
+					tool.setToolTipText("Lock");
+				}
+			}
 		}
 
 		return this;
