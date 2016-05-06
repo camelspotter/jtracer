@@ -6,6 +6,7 @@ import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
 import org.qi4j.api.constraint.Constraints;
 
 import java.awt.*;
+import java.util.Locale;
 
 @Constraints(WidgetDescriptorConstraint.class)
 public interface ComponentServiceApi extends ComponentServiceState
@@ -13,6 +14,8 @@ public interface ComponentServiceApi extends ComponentServiceState
 	ComponentService activate();
 
 	Color getBackgroundColor(@WidgetDescriptor String widget);
+
+	Color getCaretColor(@WidgetDescriptor String widget);
 
 	Dimension getDimension(@WidgetDescriptor String widget);
 
@@ -29,6 +32,10 @@ public interface ComponentServiceApi extends ComponentServiceState
 	GridPresets getGridPresets(@WidgetDescriptor String widget);
 
 	Insets getInsets(@WidgetDescriptor String widget);
+
+	Locale getLocale(@WidgetDescriptor String widget);
+
+	Boolean isEnabled(@WidgetDescriptor String graphicsOption);
 
 	ComponentService passivate();
 }

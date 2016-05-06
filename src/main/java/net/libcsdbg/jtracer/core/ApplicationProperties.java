@@ -185,11 +185,11 @@ public class ApplicationProperties
 
 	public static class Config
 	{
-		public static String buildPhaseParam = "buildPhase";
+		public static String buildPhaseParam = "build-phase";
 
 		public static String defaultSource = "jtracer.properties";
 
-		public static String fullNameParam = "fullName";
+		public static String fullNameParam = "full-name";
 
 		public static String nameParam = "name";
 

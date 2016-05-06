@@ -62,7 +62,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		super();
 		selfInject();
 
-		String fullName = registrySvc.get("fullName");
+		String fullName = registrySvc.get("full-name");
 		setTitle(fullName);
 		setIconImages(utilitySvc.getProjectIcons());
 

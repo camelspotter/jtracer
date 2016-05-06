@@ -39,7 +39,7 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 	{
 		super(owner, true);
 		selfInject();
-		setTitle("About " + registrySvc.get("fullName"));
+		setTitle("About " + registrySvc.get("full-name"));
 
 		try {
 			File page = utilitySvc.getResource(Config.page);

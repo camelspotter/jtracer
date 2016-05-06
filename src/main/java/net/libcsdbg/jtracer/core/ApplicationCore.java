@@ -246,7 +246,7 @@ public class ApplicationCore implements WindowListener,
 	protected ApplicationCore obtainGlobalLock()
 	{
 		try {
-			String path = properties.getProperty("lockFile");
+			String path = properties.getProperty("lock-file");
 			File lockFile = utilitySvc.getResource(path);
 
 			globalLock =

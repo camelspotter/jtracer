@@ -2,6 +2,7 @@ package net.libcsdbg.jtracer.service.graphics;
 
 import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.MixinNote;
+import net.libcsdbg.jtracer.annotation.constraint.WidgetDescriptor;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
 import net.libcsdbg.jtracer.service.log.LoggerService;
@@ -18,6 +19,7 @@ import org.qi4j.api.value.ValueBuilder;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Mixins(ComponentService.Mixin.class)
@@ -56,6 +58,18 @@ public interface ComponentService extends ComponentServiceApi,
 		public Color getBackgroundColor(String widget)
 		{
 			String key = widget + "-bgcolor";
+			String param = registrySvc.get(key);
+			if (param == null) {
+				throw new RuntimeException("No configuration found for key '" + key + "'");
+			}
+
+			return Color.decode(param.trim());
+		}
+
+		@Override
+		public Color getCaretColor(@WidgetDescriptor String widget)
+		{
+			String key = widget + "-caret-color";
 			String param = registrySvc.get(key);
 			if (param == null) {
 				throw new RuntimeException("No configuration found for key '" + key + "'");
@@ -222,6 +236,40 @@ public interface ComponentService extends ComponentServiceApi,
 				           margins.get(1),
 				           margins.get(2),
 				           margins.get(3));
+		}
+
+		@Override
+		public Locale getLocale(@WidgetDescriptor String widget)
+		{
+			String key = widget + "-locale";
+			String param = registrySvc.get(key);
+			if (param == null) {
+				throw new RuntimeException("No configuration found for key '" + key + "'");
+			}
+
+			param = param.trim();
+			for (Locale l : Locale.getAvailableLocales()) {
+				if (param.equals(l.toLanguageTag())) {
+					return l;
+				}
+			}
+
+			throw new RuntimeException("No locale found with language tag '" + param + "'");
+		}
+
+		@Override
+		public Boolean isEnabled(@WidgetDescriptor String graphicsOption)
+		{
+			String param = registrySvc.get(graphicsOption);
+			if (param == null) {
+				throw new RuntimeException("No configuration found for key '" + graphicsOption + "'");
+			}
+
+			param = param.trim();
+			return param.equals("true") ||
+			       param.equals("yes") ||
+			       param.equals("on") ||
+			       param.equals("1");
 		}
 
 		@Override

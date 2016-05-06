@@ -45,7 +45,7 @@ public class ToolBar extends JToolBar implements PropertyChangeListener,
 		handler = owner;
 
 		/* Setting a new border removes the float handle. To properly set the border, get the current (probably matte) border and set its properties */
-		setName(registrySvc.get("fullName") + " tools");
+		setName(registrySvc.get("full-name") + " tools");
 		setRollover(false);
 
 		add(createTool("Start"));
