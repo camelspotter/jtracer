@@ -91,6 +91,7 @@ public class Assembler implements ApplicationAssembler
 		module.objects(AboutDialog.class,
 		               Alert.class,
 		               Button.class,
+		               Console.class,
 		               InputField.class,
 		               LogPane.class,
 		               MainFrame.class,

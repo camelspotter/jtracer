@@ -96,6 +96,24 @@ public class MainFrame extends JFrame implements ActionListener,
 		setLocationRelativeTo(null);
 	}
 
+	private MainFrame prototypeConsole()
+	{
+		Console c = new Console();
+		JScrollPane viewport = new JScrollPane(c);
+		viewport.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+		JDialog dialog = new JDialog(this, "Console", true);
+		dialog.add(viewport);
+		dialog.setPreferredSize(new Dimension(640, 240));
+		dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+		dialog.pack();
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
+
+		return this;
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent event)
 	{
@@ -105,6 +123,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		/* Service menu commands */
 		if (cmd.equals("Start")) {
 			startService();
+			prototypeConsole();
 		}
 
 		else if (cmd.equals("Stop")) {
@@ -281,14 +300,13 @@ public class MainFrame extends JFrame implements ActionListener,
 		bagConstraints.gridy = 0;
 		bagConstraints.gridx = 0;
 		bagConstraints.weightx = 1;
-		bagConstraints.weighty = 1;
+		bagConstraints.weighty = 0.8;
 		bagConstraints.fill = GridBagConstraints.BOTH;
 		bagConstraints.insets = new Insets(0, 2, 0, 1);
 
 		layout.setConstraints(viewport, bagConstraints);
 		inset.add(viewport);
 		add(inset, BorderLayout.CENTER);
-
 		return this;
 	}
 
