@@ -44,10 +44,8 @@ public class MenuBar extends JMenuBar implements ActionListener,
 	protected ActionListener handler;
 
 
-	public MenuBar()
+	private MenuBar()
 	{
-		super();
-		selfInject();
 	}
 
 	public MenuBar(ActionListener owner)
@@ -90,9 +88,9 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		menu.add(createItem("Preferences...", VK_P, VK_P));
 		menu.addSeparator();
 
+		menu.add(createItem("Current log level", VK_C, 0));
 		menu.add(createItem("Lower log level", VK_L, VK_D));
 		menu.add(createItem("Higher log level", VK_H, VK_U));
-		menu.add(createItem("Current log level", VK_C, 0));
 		menu.addSeparator();
 
 		menu.add(createItem("Full screen", VK_U, VK_F11));
@@ -127,7 +125,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		menu.add(createItem("Check for updates", VK_U, 0));
 		menu.addSeparator();
 
-		menu.add(createItem("About " + registrySvc.get("name"), VK_A, VK_F1));
+		menu.add(createItem("About " + registrySvc.get("full-name") + "... ", VK_A, VK_F1));
 		add(menu);
 	}
 
@@ -164,7 +162,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 
 		String param = registrySvc.get("click-delay");
 		if (param != null) {
-			retval.setMultiClickThreshhold(Integer.parseInt(param));
+			retval.setMultiClickThreshhold(Integer.parseInt(param.trim()));
 		}
 
 		if (accelerator != 0) {
@@ -176,7 +174,12 @@ public class MenuBar extends JMenuBar implements ActionListener,
 			retval.setAccelerator(KeyStroke.getKeyStroke(accelerator, modifiers));
 		}
 
-		/* The action command is the item caption with the trailing dots trimmed */
+		/* The action command is the item caption with the trailing dots and dash-separated suffix trimmed */
+		int index = text.indexOf('-');
+		if (index > 1) {
+			text = text.substring(0, index);
+		}
+
 		text = text.replace('.', ' ').trim();
 		retval.setActionCommand(text);
 		retval.addActionListener(handler);
@@ -196,7 +199,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 
 		String param = registrySvc.get("click-delay");
 		if (param != null) {
-			retval.setMultiClickThreshhold(Integer.parseInt(param));
+			retval.setMultiClickThreshhold(Integer.parseInt(param.trim()));
 		}
 
 		retval.setActionCommand(text);
@@ -230,7 +233,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		String param = registrySvc.get("click-delay");
 		Integer delay = null;
 		if (param != null) {
-			delay = Integer.parseInt(param);
+			delay = Integer.parseInt(param.trim());
 		}
 
 		Font font = componentSvc.getFont("component");
@@ -265,7 +268,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 	@Override
 	public void propertyChange(PropertyChangeEvent event)
 	{
-		loggerSvc.debug(getClass(), event.toString());
+		loggerSvc.trace(getClass(), event.toString());
 
 		String key = event.getPropertyName();
 		Object value = event.getNewValue();
@@ -284,7 +287,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 
 	protected MenuBar renderItem(Component c, Integer menu, Integer index, String key, Object value)
 	{
-		Boolean enabled = (Boolean) value;
+		boolean enabled = (Boolean) value;
 
 		if (key.equals("isServing")) {
 			if (menu != 0) {

@@ -60,6 +60,7 @@ public interface DictionaryService extends DictionaryServiceApi,
 			return this;
 		}
 
+		@Factory(Factory.Type.POJO)
 		protected BufferedReader getDictionaryReader(String name) throws FileNotFoundException
 		{
 			File src = utilitySvc.getResource("dictionary/" + name + ".dict");
@@ -79,7 +80,7 @@ public interface DictionaryService extends DictionaryServiceApi,
 			return new BufferedReader(new FileReader(src));
 		}
 
-		@Factory
+		@Factory(Factory.Type.COMPOSITE)
 		@Override
 		public Tokenizer getTokenizer(String grammar, String text)
 		{
@@ -93,7 +94,9 @@ public interface DictionaryService extends DictionaryServiceApi,
 			       .input()
 			       .set(text);
 
-			return builder.newInstance().begin();
+			return
+				builder.newInstance()
+				       .begin();
 		}
 
 		@Note("Using the same name will overwrite older dictionary data stored under that name")

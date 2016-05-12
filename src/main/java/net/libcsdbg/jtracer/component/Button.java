@@ -31,10 +31,8 @@ public class Button extends JButton implements MouseListener,
 	protected UtilityService utilitySvc;
 
 
-	public Button()
+	private Button()
 	{
-		super();
-		selfInject();
 	}
 
 	public Button(String icon, String command, ActionListener handler)
@@ -45,7 +43,7 @@ public class Button extends JButton implements MouseListener,
 
 		String param = registrySvc.get("click-delay");
 		if (param != null) {
-			setMultiClickThreshhold(Integer.parseInt(param));
+			setMultiClickThreshhold(Integer.parseInt(param.trim()));
 		}
 
 		setToolTipText(command);
@@ -69,11 +67,13 @@ public class Button extends JButton implements MouseListener,
 
 		String param = registrySvc.get("click-delay");
 		if (param != null) {
-			setMultiClickThreshhold(Integer.parseInt(param));
+			setMultiClickThreshhold(Integer.parseInt(param.trim()));
 		}
 
 		setHorizontalTextPosition(horizontalAlignment);
 		setVerticalTextPosition(verticalAlignment);
+		setIconTextGap(Config.iconTextGap);
+
 		setContentAreaFilled(false);
 		setBorderPainted(false);
 		setRolloverEnabled(false);
@@ -93,7 +93,7 @@ public class Button extends JButton implements MouseListener,
 
 		String param = registrySvc.get("click-delay");
 		if (param != null) {
-			setMultiClickThreshhold(Integer.parseInt(param));
+			setMultiClickThreshhold(Integer.parseInt(param.trim()));
 		}
 
 		setContentAreaFilled(false);
@@ -145,5 +145,11 @@ public class Button extends JButton implements MouseListener,
 		}
 
 		super.setEnabled(enabled);
+	}
+
+
+	public static class Config
+	{
+		public static Integer iconTextGap = 6;
 	}
 }

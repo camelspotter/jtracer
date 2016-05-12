@@ -20,9 +20,9 @@ public interface LoggerServiceApi extends LoggerServiceState
 
 	Boolean isDynamicLogLevelEnabled(LogLevel level);
 
-	LoggerService logLevelDown();
+	Boolean logLevelDown();
 
-	LoggerService logLevelUp();
+	Boolean logLevelUp();
 
 	LoggerService passivate();
 

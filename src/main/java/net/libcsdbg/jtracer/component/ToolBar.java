@@ -68,7 +68,7 @@ public class ToolBar extends JToolBar implements PropertyChangeListener,
 		add(createTool("Preferences"));
 	}
 
-	@Factory
+	@Factory(Factory.Type.POJO)
 	protected Button createTool(String command)
 	{
 		String name = command.toLowerCase().replace(' ', '_') + "24.png";

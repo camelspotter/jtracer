@@ -2,6 +2,7 @@ package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.ApplicationCore;
 import net.libcsdbg.jtracer.core.AutoInjectable;
+import net.libcsdbg.jtracer.core.GenericUncaughtExceptionHandler;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
@@ -17,9 +18,9 @@ import java.beans.PropertyChangeListener;
 import java.net.*;
 
 public class MainFrame extends JFrame implements ActionListener,
-                                                 AutoInjectable,
                                                  PropertyChangeListener,
-                                                 Runnable
+                                                 Runnable,
+                                                 AutoInjectable
 {
 	private static final long serialVersionUID = 1201750874107334406L;
 
@@ -70,7 +71,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		menu = new MenuBar(this);
 		tools = new ToolBar(this);
 		log = new LogPane();
-		status = new StatusBar(registrySvc.get("name") + " initialized");
+		status = new StatusBar(fullName + " initialized");
 
 		desktop = new SessionManager(this);
 		addWindowListener(desktop);
@@ -96,24 +97,6 @@ public class MainFrame extends JFrame implements ActionListener,
 		setLocationRelativeTo(null);
 	}
 
-	private MainFrame prototypeConsole()
-	{
-		Console c = new Console();
-		JScrollPane viewport = new JScrollPane(c);
-		viewport.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-
-		JDialog dialog = new JDialog(this, "Console", true);
-		dialog.add(viewport);
-		dialog.setPreferredSize(new Dimension(640, 240));
-		dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-
-		dialog.pack();
-		dialog.setLocationRelativeTo(this);
-		dialog.setVisible(true);
-
-		return this;
-	}
-
 	@Override
 	public void actionPerformed(ActionEvent event)
 	{
@@ -123,7 +106,6 @@ public class MainFrame extends JFrame implements ActionListener,
 		/* Service menu commands */
 		if (cmd.equals("Start")) {
 			startService();
-			prototypeConsole();
 		}
 
 		else if (cmd.equals("Stop")) {
@@ -183,18 +165,21 @@ public class MainFrame extends JFrame implements ActionListener,
 			Alert.error(this, "Not implemented yet", false);
 		}
 
-		else if (cmd.equals("Lower log level")) {
-			loggerSvc.logLevelDown();
+		else if (cmd.equals("Current log level")) {
+			new InputPrompt(this, cmd);
 			logCurrentLogLevel();
+		}
+
+		else if (cmd.equals("Lower log level")) {
+			if (loggerSvc.logLevelDown()) {
+				logCurrentLogLevel();
+			}
 		}
 
 		else if (cmd.equals("Higher log level")) {
-			loggerSvc.logLevelUp();
-			logCurrentLogLevel();
-		}
-
-		else if (cmd.equals("Current log level")) {
-			logCurrentLogLevel();
+			if (loggerSvc.logLevelUp()) {
+				logCurrentLogLevel();
+			}
 		}
 
 		else if (cmd.equals("Full screen")) {
@@ -263,6 +248,13 @@ public class MainFrame extends JFrame implements ActionListener,
 			String key = "url-" + cmd.toLowerCase().replace(' ', '-');
 			String url = registrySvc.get(key);
 
+			if (url == null) {
+				String message = "URL for key '" + key + "' not registered";
+				log.appendln(message, "error");
+				loggerSvc.error(getClass(), message);
+				return;
+			}
+
 			try {
 				utilitySvc.browse(new URL(url));
 			}
@@ -288,7 +280,7 @@ public class MainFrame extends JFrame implements ActionListener,
 	protected MainFrame addViewport()
 	{
 		JPanel nowrap = new JPanel(new BorderLayout());
-		nowrap.add(log);
+		nowrap.add(log, BorderLayout.CENTER);
 
 		JScrollPane viewport = new JScrollPane(nowrap);
 		viewport.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -300,13 +292,14 @@ public class MainFrame extends JFrame implements ActionListener,
 		bagConstraints.gridy = 0;
 		bagConstraints.gridx = 0;
 		bagConstraints.weightx = 1;
-		bagConstraints.weighty = 0.8;
+		bagConstraints.weighty = 1;
 		bagConstraints.fill = GridBagConstraints.BOTH;
 		bagConstraints.insets = new Insets(0, 2, 0, 1);
 
 		layout.setConstraints(viewport, bagConstraints);
 		inset.add(viewport);
 		add(inset, BorderLayout.CENTER);
+
 		return this;
 	}
 
@@ -374,12 +367,12 @@ public class MainFrame extends JFrame implements ActionListener,
 				}
 
 				String ip = parts[0].trim();
-				if (!ip.equals("*") && !ip.matches("^([0-9]{1,3}\\.){3}[0-9]{1,3}$")) {
+				if (!ip.equals("*") && !ip.matches(Config.ipPattern)) {
 					break;
 				}
 
 				String portParam = parts[1].trim();
-				if (!portParam.matches("^[0-9]{1,5}$")) {
+				if (!portParam.matches(Config.portPattern)) {
 					break;
 				}
 
@@ -435,9 +428,8 @@ public class MainFrame extends JFrame implements ActionListener,
 					}
 					else {
 						log.appendln(err.getMessage(), "error");
+						loggerSvc.catching(getClass(), err);
 					}
-
-					loggerSvc.catching(getClass(), err);
 				}
 			}
 
@@ -482,7 +474,8 @@ public class MainFrame extends JFrame implements ActionListener,
 
 		log.appendln("Starting server...", "status");
 
-		daemon = new Thread(this, Config.daemonName);
+		daemon = new Thread(Thread.currentThread().getThreadGroup(), this, Config.daemonName);
+		daemon.setUncaughtExceptionHandler(new GenericUncaughtExceptionHandler());
 		daemon.setDaemon(true);
 		daemon.start();
 
@@ -524,6 +517,11 @@ public class MainFrame extends JFrame implements ActionListener,
 	{
 		public static Integer defaultPort = 4242;
 
+
 		public static String daemonName = "LDP Service Thread";
+
+		public static String ipPattern = "^([0-9]{1,3}\\.){3}[0-9]{1,3}$";
+
+		public static String portPattern = "^[0-9]{1,5}$";
 	}
 }

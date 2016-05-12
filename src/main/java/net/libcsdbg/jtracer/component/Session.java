@@ -86,6 +86,7 @@ public class Session extends JFrame implements ActionListener,
 
 		/* Setup the UI */
 		status = new TraceStatusBar();
+		status.setAddress(connection.getInetAddress().getCanonicalHostName(), connection.getPort());
 		add(status, BorderLayout.SOUTH);
 
 		tabs = new JTabbedPane();
@@ -230,12 +231,11 @@ public class Session extends JFrame implements ActionListener,
 			status.setMessage(Config.defaultStatusMessage);
 		}
 
-		/* Set once, only over n/a */
 		InetAddress address = connection.getInetAddress();
 		int port = connection.getPort();
 		status.setAddress(address.getCanonicalHostName(), port);
 
-		/* Customize session frame title (set once, only over n/a) */
+		/* Customize session frame title */
 		String ip = address.getHostAddress();
 		String path = request.get("path");
 		String pid = request.get("pid");
@@ -406,10 +406,10 @@ public class Session extends JFrame implements ActionListener,
 		int i = tabs.getSelectedIndex();
 		if (i < 0) {
 			status.clear();
+			setTitle(Config.initialTitle);
 			return;
 		}
 
-		tabs.setIconAt(i, utilitySvc.loadIcon("void.png"));
 		TracePane pane = traces.get(i);
 
 		String field = pane.getRequestSection("exception");
@@ -421,7 +421,10 @@ public class Session extends JFrame implements ActionListener,
 		}
 
 		status.setTimestamp(Long.parseLong(pane.getRequestSection("tstamp"), 16));
-		status.setAddress(connection.getInetAddress().getCanonicalHostName(), connection.getPort());
+
+		if (!pane.isVisited()) {
+			tabs.setIconAt(i, utilitySvc.loadIcon("void.png"));
+		}
 	}
 
 	protected Map<String, String> validateRequest(Map<String, String> request)
@@ -445,6 +448,7 @@ public class Session extends JFrame implements ActionListener,
 
 		return request;
 	}
+
 
 	public static class Config
 	{

@@ -55,7 +55,7 @@ public class TraceToolBar extends JToolBar implements PropertyChangeListener,
 		add(createTool("Find", listeners[0]));
 	}
 
-	@Factory
+	@Factory(Factory.Type.POJO)
 	protected Button createTool(String command, ActionListener... listeners)
 	{
 		String name = command.toLowerCase().replace(' ', '_') + "24.png";

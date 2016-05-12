@@ -50,11 +50,11 @@ public interface Tokenizer extends TokenizerState,
 		protected DictionaryService dictionarySvc;
 
 
-		protected Pattern pattern;
-
 		protected Matcher matcher;
 
 		protected Integer offset;
+
+		protected Pattern pattern;
 
 
 		@Override
@@ -130,7 +130,7 @@ public interface Tokenizer extends TokenizerState,
 		@Override
 		public Type resolveTokenType(String tokenText, String delimiter)
 		{
-			/* Decimal and hex numbers */
+			/* Decimal, binary, octal and hex numbers */
 			if (tokenText.matches(Config.numberPattern)) {
 				return Type.number;
 			}
@@ -167,7 +167,7 @@ public interface Tokenizer extends TokenizerState,
 			return Type.plain;
 		}
 
-		@Factory
+		@Factory(Factory.Type.COMPOSITE_VALUE)
 		@Override
 		public Token tokenOf(String text, String delimiter, Type type)
 		{

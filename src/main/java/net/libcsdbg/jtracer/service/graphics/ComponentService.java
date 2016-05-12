@@ -54,6 +54,7 @@ public interface ComponentService extends ComponentServiceApi,
 			return this;
 		}
 
+		@Factory(Factory.Type.POJO)
 		@Override
 		public Color getBackgroundColor(String widget)
 		{
@@ -66,6 +67,7 @@ public interface ComponentService extends ComponentServiceApi,
 			return Color.decode(param.trim());
 		}
 
+		@Factory(Factory.Type.POJO)
 		@Override
 		public Color getCaretColor(@WidgetDescriptor String widget)
 		{
@@ -78,6 +80,7 @@ public interface ComponentService extends ComponentServiceApi,
 			return Color.decode(param.trim());
 		}
 
+		@Factory(Factory.Type.POJO)
 		@Override
 		public Dimension getDimension(String widget)
 		{
@@ -98,6 +101,7 @@ public interface ComponentService extends ComponentServiceApi,
 			return new Dimension(axes.get(0), axes.get(1));
 		}
 
+		@Factory(Factory.Type.POJO)
 		@SuppressWarnings("MagicConstant")
 		@Override
 		public Font getFont(String widget)
@@ -163,6 +167,7 @@ public interface ComponentService extends ComponentServiceApi,
 			return retval;
 		}
 
+		@Factory(Factory.Type.POJO)
 		@Override
 		public Color getForegroundColor(String widget)
 		{
@@ -175,7 +180,7 @@ public interface ComponentService extends ComponentServiceApi,
 			return Color.decode(param.trim());
 		}
 
-		@Factory
+		@Factory(Factory.Type.COMPOSITE_VALUE)
 		@Override
 		public GridPresets getGridPresets(String widget)
 		{
@@ -214,6 +219,7 @@ public interface ComponentService extends ComponentServiceApi,
 			return builder.newInstance();
 		}
 
+		@Factory(Factory.Type.POJO)
 		@Override
 		public Insets getInsets(String widget)
 		{
@@ -238,6 +244,7 @@ public interface ComponentService extends ComponentServiceApi,
 				           margins.get(3));
 		}
 
+		@Factory(Factory.Type.POJO)
 		@Override
 		public Locale getLocale(@WidgetDescriptor String widget)
 		{
@@ -265,11 +272,12 @@ public interface ComponentService extends ComponentServiceApi,
 				throw new RuntimeException("No configuration found for key '" + graphicsOption + "'");
 			}
 
-			param = param.trim();
-			return param.equals("true") ||
-			       param.equals("yes") ||
-			       param.equals("on") ||
-			       param.equals("1");
+			param = param.trim().toLowerCase();
+			return
+				param.equals("true") ||
+			    param.equals("yes") ||
+			    param.equals("on") ||
+			    param.equals("1");
 		}
 
 		@Override

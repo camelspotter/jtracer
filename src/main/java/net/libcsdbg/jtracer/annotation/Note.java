@@ -2,7 +2,7 @@ package net.libcsdbg.jtracer.annotation;
 
 import java.lang.annotation.*;
 
-/* Used to comment on generic, important design decisions (high value comments) */
+/* High value comment */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ ElementType.ANNOTATION_TYPE,
           ElementType.CONSTRUCTOR,

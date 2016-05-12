@@ -1,23 +1,23 @@
 <profile>
-    <id>development-standard</id>
+    <id>release-standard</id>
 
     <activation>
-        <activeByDefault>true</activeByDefault>
+        <activeByDefault>false</activeByDefault>
     </activation>
 
     <properties>
         <!-- Generic -->
-        <build.phase>development</build.phase>
+        <build.phase>release</build.phase>
         <splash>theme/common/splash.png</splash>
 
         <!-- Log4j log levels (for third party) -->
-        <log4j.thirdParty.level.full>debug</log4j.thirdParty.level.full>
+        <log4j.thirdParty.level.full>trace</log4j.thirdParty.level.full>
         <log4j.thirdParty.level.main>off</log4j.thirdParty.level.main>
-        <log4j.thirdParty.level.console>debug</log4j.thirdParty.level.console>
+        <log4j.thirdParty.level.console>off</log4j.thirdParty.level.console>
 
         <!-- Log4j2 log levels (for jTracer) -->
-        <log4j.level.full>debug</log4j.level.full>
+        <log4j.level.full>trace</log4j.level.full>
         <log4j.level.main>off</log4j.level.main>
-        <log4j.level.console>debug</log4j.level.console>
+        <log4j.level.console>off</log4j.level.console>
     </properties>
 </profile>

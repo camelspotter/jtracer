@@ -13,8 +13,6 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 
-/* todo Finalize look and feel, colors */
-
 public class LogPane extends JTextPane implements AutoInjectable
 {
 	private static final long serialVersionUID = 7733740725310300281L;
@@ -43,14 +41,14 @@ public class LogPane extends JTextPane implements AutoInjectable
 		/* Create paragraph style attributes */
 		String param = registrySvc.get("log-padding");
 		if (param != null) {
-			Integer padding = Integer.parseInt(param);
+			Integer padding = Integer.parseInt(param.trim());
 			StyleConstants.setLeftIndent(style, padding);
 			StyleConstants.setRightIndent(style, padding);
 		}
 
 		param = registrySvc.get("log-line-height");
 		if (param != null) {
-			StyleConstants.setLineSpacing(style, Float.parseFloat(param));
+			StyleConstants.setLineSpacing(style, Float.parseFloat(param.trim()));
 		}
 
 		StyleConstants.setAlignment(style, StyleConstants.ALIGN_JUSTIFIED);
@@ -58,12 +56,10 @@ public class LogPane extends JTextPane implements AutoInjectable
 
 		/* Setup the default (debug) style */
 		Font font = componentSvc.getFont("log");
-		if (font != null) {
-			StyleConstants.setFontFamily(style, font.getFamily());
-			StyleConstants.setFontSize(style, font.getSize());
-			StyleConstants.setBold(style, font.isBold());
-			StyleConstants.setItalic(style, font.isItalic());
-		}
+		StyleConstants.setFontFamily(style, font.getFamily());
+		StyleConstants.setFontSize(style, font.getSize());
+		StyleConstants.setBold(style, font.isBold());
+		StyleConstants.setItalic(style, font.isItalic());
 
 		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-debug"));
 
@@ -136,11 +132,23 @@ public class LogPane extends JTextPane implements AutoInjectable
 
 	public LogPane clear()
 	{
-		try {
-			Document doc = getDocument();
+		/* If the call is within an event dispatching thread */
+		if (SwingUtilities.isEventDispatchThread()) {
+			try {
+				Document doc = getDocument();
+				doc.remove(0, doc.getLength());
+				setCaretPosition(0);
+			}
+			catch (Throwable err) {
+				loggerSvc.catching(getClass(), err);
+			}
 
-			doc.remove(0, doc.getLength());
-			setCaretPosition(0);
+			return this;
+		}
+
+		/* Register a Runnable to be called by the event dispatching thread */
+		try {
+			SwingUtilities.invokeLater(this::clear);
 			return this;
 		}
 		catch (RuntimeException err) {

@@ -6,7 +6,7 @@ import net.libcsdbg.jtracer.service.log.LoggerService;
 
 import java.io.PrintStream;
 
-@MixinNote("This is a mock service implementation, it logs on console with a simple format, ignoring log levels")
+@MixinNote("Mock service implementation, it logs on console with a simple format, ignoring log levels")
 public abstract class MockLoggerService implements LoggerService
 {
 	protected PrintStream logSink;
@@ -21,8 +21,8 @@ public abstract class MockLoggerService implements LoggerService
 			return this;
 		}
 
-		logSink = System.out;
-		errorSink = System.err;
+		logSink = Config.defaultLogSink;
+		errorSink = Config.defaultErrorSink;
 
 		dynamicLogLevel().set(LogLevel.trace);
 		metainfo().set("mock");
@@ -97,15 +97,15 @@ public abstract class MockLoggerService implements LoggerService
 	}
 
 	@Override
-	public LoggerService logLevelDown()
+	public Boolean logLevelDown()
 	{
-		return this;
+		return false;
 	}
 
 	@Override
-	public LoggerService logLevelUp()
+	public Boolean logLevelUp()
 	{
-		return this;
+		return false;
 	}
 
 	@Override
@@ -140,5 +140,13 @@ public abstract class MockLoggerService implements LoggerService
 		}
 
 		return this;
+	}
+
+
+	public static class Config
+	{
+		public static PrintStream defaultErrorSink = System.err;
+
+		public static PrintStream defaultLogSink = System.out;
 	}
 }

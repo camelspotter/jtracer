@@ -7,6 +7,6 @@ public class NameConstraint implements Constraint<Name, String>
 	@Override
 	public boolean isValid(Name annotation, String value)
 	{
-		return value != null && value.matches("^[a-zA-Z0-9_-]+$");
+		return value != null && value.matches(annotation.grammar());
 	}
 }

@@ -27,22 +27,27 @@ public class Assembler implements ApplicationAssembler
 	@Override
 	public ApplicationAssembly assemble(ApplicationAssemblyFactory factory) throws AssemblyException
 	{
-		assembly = factory.newApplicationAssembly();
-		assembly.setMode(properties.getApplicationMode())
-		        .setVersion(properties.getApplicationVersion())
-		        .setName(properties.getApplicationFullName());
+		assembly =
+			factory.newApplicationAssembly()
+			       .setName(properties.getApplicationFullName())
+			       .setMode(properties.getApplicationMode())
+			       .setVersion(properties.getApplicationVersion());
 
 		LayerAssembly layer = assembly.layer("application");
 		ModuleAssembly module = layer.module("service");
 
+		/* In dependency order */
 		registerLoggerService(module);
 		registerRegistryService(module);
 		registerComponentService(module);
 		registerUtilityService(module);
 		registerDictionaryService(module);
 
-		module = layer.module("util");
-		registerObjects(module);
+		module = layer.module("core");
+		registerCoreObjects(module);
+
+		module = layer.module("gui");
+		registerComponents(module);
 
 		return assembly;
 	}
@@ -56,6 +61,37 @@ public class Assembler implements ApplicationAssembler
 		      .identifiedBy("Component Service")
 		      .visibleIn(Visibility.application)
 		      .instantiateOnStartup();
+
+		return this;
+	}
+
+	protected Assembler registerComponents(ModuleAssembly module) throws AssemblyException
+	{
+		module.objects(AboutDialog.class,
+		               Alert.class,
+		               Button.class,
+		               InputPrompt.class,
+		               LogPane.class,
+		               MainFrame.class,
+		               MenuBar.class,
+		               Session.class,
+		               SessionManager.class,
+		               StatusBar.class,
+		               TextInput.class,
+		               ToolBar.class,
+		               TracePane.class,
+		               TraceStatusBar.class,
+		               TraceToolBar.class)
+		      .visibleIn(Visibility.application);
+
+		return this;
+	}
+
+	protected Assembler registerCoreObjects(ModuleAssembly module) throws AssemblyException
+	{
+		module.objects(ApplicationCore.class,
+		               GenericUncaughtExceptionHandler.class)
+		      .visibleIn(Visibility.application);
 
 		return this;
 	}
@@ -82,31 +118,6 @@ public class Assembler implements ApplicationAssembler
 		      .identifiedBy("Logger Service")
 		      .visibleIn(Visibility.application)
 		      .instantiateOnStartup();
-
-		return this;
-	}
-
-	protected Assembler registerObjects(ModuleAssembly module) throws AssemblyException
-	{
-		module.objects(AboutDialog.class,
-		               Alert.class,
-		               Button.class,
-		               Console.class,
-		               InputField.class,
-		               LogPane.class,
-		               MainFrame.class,
-		               MenuBar.class,
-		               Session.class,
-		               SessionManager.class,
-		               StatusBar.class,
-		               ToolBar.class,
-		               TracePane.class,
-		               TraceStatusBar.class,
-		               TraceToolBar.class,
-
-		               ApplicationCore.class,
-		               GenericUncaughtExceptionHandler.class)
-		      .visibleIn(Visibility.application);
 
 		return this;
 	}

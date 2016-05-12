@@ -7,6 +7,6 @@ public class WidgetDescriptorConstraint implements Constraint<WidgetDescriptor, 
 	@Override
 	public boolean isValid(WidgetDescriptor annotation, String value)
 	{
-		return value != null && value.matches("^[a-zA-Z0-9][a-zA-Z0-9_-]+$");
+		return value != null && value.matches(annotation.grammar());
 	}
 }

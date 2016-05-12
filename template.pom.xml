@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.libcsdbg</groupId>
-    <artifactId>jTracer</artifactId>
+    <artifactId>jtracer</artifactId>
     <version>1.04</version>
 
     <name>jTracer</name>
@@ -96,13 +96,13 @@
         <dependency>
             <groupId>org.qi4j.core</groupId>
             <artifactId>org.qi4j.core.bootstrap</artifactId>
-            <version>${qi.version}</version>
+            <version>${qi4j.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.qi4j.core</groupId>
             <artifactId>org.qi4j.core.runtime</artifactId>
-            <version>${qi.version}</version>
+            <version>${qi4j.version}</version>
         </dependency>
 
 
@@ -111,7 +111,7 @@
         <dependency>
             <groupId>org.qi4j.library</groupId>
             <artifactId>org.qi4j.library.constraints</artifactId>
-            <version>${qi.version}</version>
+            <version>${qi4j.version}</version>
         </dependency>
 
 
@@ -120,7 +120,7 @@
         <dependency>
             <groupId>org.qi4j.tool</groupId>
             <artifactId>org.qi4j.tool.envisage</artifactId>
-            <version>${qi.version}</version>
+            <version>${qi4j.version}</version>
         </dependency>
     </dependencies>
 
@@ -131,14 +131,17 @@
         <slf4j.version>1.7.7</slf4j.version>
 
         <!-- Qi4j core, extensions, libraries and tools -->
-        <qi.version>2.1</qi.version>
+        <qi4j.version>2.1</qi4j.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <project.description>Stack Trace Visualization Tool</project.description>
         <project.author>Tasos Parisinos</project.author>
         <project.author.mail>t.parisinos@gmail.com</project.author.mail>
+        <project.copyright>2013-2017</project.copyright>
+        <project.description>Stack Trace Visualization Tool</project.description>
+        <project.entryPoint>${groupId}.${artifactId}.core.ApplicationCore</project.entryPoint>
         <project.license>GNU General Public Licence v3</project.license>
+        <project.poweredBy>Zest @ Apache Software Foundation</project.poweredBy>
     </properties>
 
     <profiles>

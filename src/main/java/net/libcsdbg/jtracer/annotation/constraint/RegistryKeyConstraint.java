@@ -7,6 +7,6 @@ public class RegistryKeyConstraint implements Constraint<RegistryKey, String>
 	@Override
 	public boolean isValid(RegistryKey annotation, String value)
 	{
-		return value != null && value.matches("^[a-zA-Z0-9_]+(-[a-zA-Z0-9_]+)*$");
+		return value != null && value.matches(annotation.grammar());
 	}
 }

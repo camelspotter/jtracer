@@ -7,14 +7,14 @@ import org.qi4j.tools.model.descriptor.ModuleDetailDescriptor;
 
 public interface AutoInjectable
 {
-	default Application application()
+	public default Application application()
 	{
 		return
 			ApplicationCore.getCurrentApplicationCore()
 			               .getApplication();
 	}
 
-	default Layer layer()
+	public default Layer layer()
 	{
 		ModuleDetailDescriptor module =
 			ApplicationCore.getCurrentApplicationCore()
@@ -29,7 +29,7 @@ public interface AutoInjectable
 		return application().findLayer(layerName);
 	}
 
-	default Module module()
+	public default Module module()
 	{
 		ModuleDetailDescriptor module =
 			ApplicationCore.getCurrentApplicationCore()
@@ -37,6 +37,7 @@ public interface AutoInjectable
 			               .findModule(this);
 
 		String moduleName = module.descriptor().name();
+
 		String layerName =
 			module.layer()
 			      .descriptor()
@@ -45,27 +46,24 @@ public interface AutoInjectable
 		return application().findModule(layerName, moduleName);
 	}
 
-	default AutoInjectable selfInject(Object... injected)
+	public default AutoInjectable selfInject(Object... injected)
 	{
-		module().injectTo(this, injected);
-		return this;
+		return selfInject(module(), injected);
 	}
 
-	default AutoInjectable selfInject(Module module, Object... injected)
+	public default AutoInjectable selfInject(Module module, Object... injected)
 	{
 		module.injectTo(this, injected);
 		return this;
 	}
 
-	default AutoInjectable selfInject(String layer, String module, Object... injected)
+	public default AutoInjectable selfInject(String layer, String module, Object... injected)
 	{
-		Module m = application().findModule(layer, module);
-		return selfInject(m, injected);
+		return selfInject(application().findModule(layer, module), injected);
 	}
 
-	default AutoInjectable selfInject(Layer layer, String module, Object... injected)
+	public default AutoInjectable selfInject(Layer layer, String module, Object... injected)
 	{
-		Module m = application().findModule(layer.name(), module);
-		return selfInject(m, injected);
+		return selfInject(application().findModule(layer.name(), module), injected);
 	}
 }

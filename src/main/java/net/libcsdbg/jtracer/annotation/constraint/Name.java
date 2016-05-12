@@ -6,8 +6,9 @@ import java.lang.annotation.*;
 
 @ConstraintDeclaration
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.PARAMETER, ElementType.METHOD })
+@Target({ ElementType.METHOD, ElementType.PARAMETER })
 @Inherited
 public @interface Name
 {
+	String grammar() default "^[a-zA-Z0-9_-]+$";
 }

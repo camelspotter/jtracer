@@ -12,10 +12,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
-public class Alert extends JDialog implements ActionListener,
-                                              AutoInjectable
+public class InputPrompt extends JDialog implements ActionListener,
+                                                    AutoInjectable
 {
-	private static final long serialVersionUID = -9196393091054977304L;
+	private static final long serialVersionUID = 8285484182165866415L;
 
 
 	@Service
@@ -28,68 +28,47 @@ public class Alert extends JDialog implements ActionListener,
 	protected UtilityService utilitySvc;
 
 
-	protected Boolean reply = false;
+	protected TextInput input;
+
+	protected String replyLatch;
 
 
-	private Alert()
+	private InputPrompt()
 	{
 	}
 
-	public Alert(JFrame owner, String message, AlertType type)
+	public InputPrompt(JFrame owner, String message)
 	{
-		super(owner, true);
+		super(owner, "Input prompt", true);
 		selfInject();
+
+		GridBagLayout layout = new GridBagLayout();
+		GridBagConstraints bagConstraints = new GridBagConstraints();
+		JPanel south = new JPanel(layout);
 
 		Button ok = new Button("Ok", this);
 		ok.setMnemonic(KeyEvent.VK_O);
-
-		Button cancel = new Button("Cancel", this);
-		cancel.setMnemonic(KeyEvent.VK_C);
-
-		GridBagLayout layout = new GridBagLayout();
-		JPanel center = new JPanel(layout);
-		JPanel south = new JPanel(layout);
-
-		GridBagConstraints bagConstraints = new GridBagConstraints();
 		bagConstraints.gridy = 0;
 		bagConstraints.gridx = 0;
 		bagConstraints.insets = Config.buttonMargin;
+		layout.setConstraints(ok, bagConstraints);
+		south.add(ok);
 
-		ImageIcon icon = null;
-		switch (type) {
-		case prompt:
-			setTitle("Prompt");
-			icon = utilitySvc.loadIcon("prompt32.png");
+		Button cancel = new Button("Cancel", this);
+		cancel.setMnemonic(KeyEvent.VK_C);
+		bagConstraints.gridx++;
+		layout.setConstraints(cancel, bagConstraints);
+		south.add(cancel);
 
-			layout.setConstraints(ok, bagConstraints);
-			south.add(ok);
-
-			bagConstraints.gridx++;
-			layout.setConstraints(cancel, bagConstraints);
-			south.add(cancel);
-			break;
-
-		case error:
-			setTitle("Error");
-			icon = utilitySvc.loadIcon("error32.png");
-			layout.setConstraints(ok, bagConstraints);
-			south.add(ok);
-			break;
-
-		case information:
-			setTitle("Information");
-			icon = utilitySvc.loadIcon("info32.png");
-			layout.setConstraints(ok, bagConstraints);
-			south.add(ok);
-		}
-
+		JPanel center = new JPanel(layout);
+		ImageIcon icon = utilitySvc.loadIcon("prompt32.png");
 		String lines[] = message.split("\\n");
 
 		JLabel l = new JLabel(icon);
 		bagConstraints.gridx = 0;
 		bagConstraints.insets = Config.iconMargin;
 		bagConstraints.anchor = GridBagConstraints.NORTH;
-		bagConstraints.gridheight = lines.length;
+		bagConstraints.gridheight = lines.length + 1;
 		layout.setConstraints(l, bagConstraints);
 		center.add(l);
 
@@ -111,6 +90,13 @@ public class Alert extends JDialog implements ActionListener,
 			bagConstraints.insets.top = 4;
 		}
 
+		input = new TextInput((ActionListener) owner);
+		input.setFont(font);
+		bagConstraints.gridy++;
+		bagConstraints.fill = GridBagConstraints.HORIZONTAL;
+		layout.setConstraints(input, bagConstraints);
+		center.add(input);
+
 		add(center, BorderLayout.CENTER);
 		add(south, BorderLayout.SOUTH);
 
@@ -123,58 +109,23 @@ public class Alert extends JDialog implements ActionListener,
 		setVisible(true);
 	}
 
-	public static void error(JFrame owner, String message, Boolean isFatal)
-	{
-		new Alert(owner, message, AlertType.error);
-		if (isFatal) {
-			throw new RuntimeException(message);
-		}
-	}
-
-	public static void information(JFrame owner, String message)
-	{
-		new Alert(owner, message, AlertType.information);
-	}
-
-	public static Boolean prompt(JFrame owner, String message)
-	{
-		return new Alert(owner, message, AlertType.prompt).getReply();
-	}
-
 	@Override
 	public void actionPerformed(ActionEvent event)
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
 		if (event.getActionCommand().equals("Ok")) {
-			reply = true;
+			replyLatch = input.getText();
 		}
 
 		dispose();
 	}
 
-	public Boolean getReply()
+	public String getReply()
 	{
-		return reply;
+		return replyLatch;
 	}
 
-
-	public static enum AlertType
-	{
-		error(0x01),
-
-		information(0x02),
-
-		prompt(0x04);
-
-
-		protected Integer ordinal;
-
-		private AlertType(Integer ordinal)
-		{
-			this.ordinal = ordinal;
-		}
-	}
 
 	public static class Config
 	{

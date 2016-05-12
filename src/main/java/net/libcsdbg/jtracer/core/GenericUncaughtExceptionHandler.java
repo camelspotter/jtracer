@@ -22,7 +22,7 @@ public class GenericUncaughtExceptionHandler implements Thread.UncaughtException
 		StringBuilder retval = new StringBuilder(depth + 1);
 		retval.append("\n");
 
-		for (int i = 0; i < depth; i++) {
+		while (depth-- > 0) {
 			retval.append("\t");
 		}
 

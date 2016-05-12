@@ -15,7 +15,6 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import java.awt.*;
-import java.util.HashMap;
 import java.util.Map;
 
 public class TracePane extends JTextPane implements AutoInjectable
@@ -38,12 +37,11 @@ public class TracePane extends JTextPane implements AutoInjectable
 
 	protected Map<String, String> request;
 
+	protected Boolean visited;
 
-	public TracePane()
+
+	private TracePane()
 	{
-		super();
-		selfInject();
-		request = new HashMap<>();
 	}
 
 	public TracePane(Map<String, String> request)
@@ -51,6 +49,7 @@ public class TracePane extends JTextPane implements AutoInjectable
 		super();
 		selfInject();
 		this.request = request;
+		this.visited = false;
 
 		/* Create the default style */
 		Style style =
@@ -153,5 +152,16 @@ public class TracePane extends JTextPane implements AutoInjectable
 	public String getRequestSection(String section)
 	{
 		return request.get(section);
+	}
+
+	public Boolean isVisited()
+	{
+		return visited;
+	}
+
+	public TracePane setVisited(Boolean visited)
+	{
+		this.visited = visited;
+		return this;
 	}
 }

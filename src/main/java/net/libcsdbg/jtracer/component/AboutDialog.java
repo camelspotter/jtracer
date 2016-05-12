@@ -29,10 +29,8 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 	protected UtilityService utilitySvc;
 
 
-	public AboutDialog()
+	private AboutDialog()
 	{
-		super();
-		selfInject();
 	}
 
 	public AboutDialog(JFrame owner)

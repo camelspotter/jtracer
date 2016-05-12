@@ -1,5 +1,6 @@
 package net.libcsdbg.jtracer.core;
 
+import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.component.Alert;
 import net.libcsdbg.jtracer.component.MainFrame;
 import net.libcsdbg.jtracer.service.log.LoggerService;
@@ -85,6 +86,7 @@ public class ApplicationCore implements WindowListener,
 		return current;
 	}
 
+	@Note("Root logger is eagerly initialized")
 	public static Logger getRootLogger()
 	{
 		if (rootLogger == null) {
@@ -128,6 +130,7 @@ public class ApplicationCore implements WindowListener,
 			exitCode = Config.exitFailure;
 		}
 		finally {
+			/* Graceful shutdown */
 			try {
 				if (core != null && core.active) {
 					core.passivate();
@@ -173,21 +176,22 @@ public class ApplicationCore implements WindowListener,
 		}
 	}
 
-	public Application getApplication()
+	public final Application getApplication()
 	{
 		return application;
 	}
 
-	public ApplicationProperties getApplicationProperties()
+	public final ApplicationProperties getApplicationProperties()
 	{
 		return properties;
 	}
 
-	public Architecture getArchitecture()
+	public final Architecture getArchitecture()
 	{
 		return architecture;
 	}
 
+	@Note("Lazily initialized")
 	public GenericUncaughtExceptionHandler getUncaughtExceptionHandler()
 	{
 		if (uncaughtExceptionHandler == null) {
@@ -222,8 +226,11 @@ public class ApplicationCore implements WindowListener,
 			Thread.currentThread()
 			      .getThreadGroup();
 
+		Thread runner = new Thread(group, hook, Config.shutdownHookName);
+		runner.setUncaughtExceptionHandler(getUncaughtExceptionHandler());
+
 		Runtime.getRuntime()
-		       .addShutdownHook(new Thread(group, hook, Config.shutdownHookName));
+		       .addShutdownHook(runner);
 
 		return this;
 	}
@@ -314,6 +321,7 @@ public class ApplicationCore implements WindowListener,
 
 			loggerSvc.info(getClass(), message.toString());
 		}
+
 		return this;
 	}
 

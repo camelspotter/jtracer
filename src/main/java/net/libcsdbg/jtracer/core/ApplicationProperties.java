@@ -75,7 +75,7 @@ public class ApplicationProperties
 		return getProperty(Config.buildPhaseParam);
 	}
 
-	public Properties getProperties()
+	public final Properties getProperties()
 	{
 		return properties;
 	}

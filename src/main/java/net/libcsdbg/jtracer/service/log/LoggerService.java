@@ -26,20 +26,20 @@ public interface LoggerService extends LoggerServiceApi,
 		protected static LogLevel translateLogLevel(Level level)
 		{
 			switch (level.name()) {
-			case "TRACE":
-				return LogLevel.trace;
-
 			case "DEBUG":
 				return LogLevel.debug;
+
+			case "ERROR":
+				return LogLevel.error;
 
 			case "INFO":
 				return LogLevel.info;
 
+			case "TRACE":
+				return LogLevel.trace;
+
 			case "WARN":
 				return LogLevel.warning;
-
-			case "ERROR":
-				return LogLevel.error;
 
 			default:
 				return LogLevel.fatal;
@@ -167,25 +167,29 @@ public interface LoggerService extends LoggerServiceApi,
 		}
 
 		@Override
-		public LoggerService logLevelDown()
+		public Boolean logLevelDown()
 		{
 			int ordinal = dynamicLogLevel().get().ordinal() - 1;
-			if (ordinal >= 0) {
-				dynamicLogLevel().set(LogLevel.values()[ordinal]);
+			if (ordinal < 0) {
+				return false;
 			}
 
-			return debug(getClass(), "LoggerService '" + identity().get() + "' current log level -> " + dynamicLogLevel().get().name());
+			dynamicLogLevel().set(LogLevel.values()[ordinal]);
+			debug(getClass(), "LoggerService '" + identity().get() + "' current log level -> " + dynamicLogLevel().get().name());
+			return true;
 		}
 
 		@Override
-		public LoggerService logLevelUp()
+		public Boolean logLevelUp()
 		{
 			int ordinal = dynamicLogLevel().get().ordinal() + 1;
-			if (ordinal <= LogLevel.fatal.ordinal()) {
-				dynamicLogLevel().set(LogLevel.values()[ordinal]);
+			if (ordinal > LogLevel.fatal.ordinal()) {
+				return false;
 			}
 
-			return debug(getClass(), "LoggerService '" + identity().get() + "' current log level -> " + dynamicLogLevel().get().name());
+			dynamicLogLevel().set(LogLevel.values()[ordinal]);
+			debug(getClass(), "LoggerService '" + identity().get() + "' current log level -> " + dynamicLogLevel().get().name());
+			return true;
 		}
 
 		@Override

@@ -31,7 +31,7 @@ public class SessionManager extends Component implements WindowListener,
 
 	protected Integer current;
 
-	protected final JFrame owner;
+	protected JFrame owner;
 
 	protected final List<Session> sessions;
 
@@ -103,7 +103,7 @@ public class SessionManager extends Component implements WindowListener,
 		return sessions.size();
 	}
 
-	public List<Session> getSessions()
+	public final List<Session> getSessions()
 	{
 		return sessions;
 	}

@@ -273,7 +273,7 @@ public class Architecture
 		return asList(module.services());
 	}
 
-	public Map<LayerDetailDescriptor, List<ModuleDetailDescriptor>> structure()
+	public final Map<LayerDetailDescriptor, List<ModuleDetailDescriptor>> structure()
 	{
 		return structure;
 	}

@@ -2,6 +2,7 @@ package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.core.AutoInjectable;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
@@ -26,6 +27,9 @@ public class StatusBar extends JPanel implements ActionListener,
 
 	@Service
 	protected LoggerService loggerSvc;
+
+	@Service
+	protected RegistryService registrySvc;
 
 	@Service
 	protected UtilityService utilitySvc;
@@ -71,7 +75,7 @@ public class StatusBar extends JPanel implements ActionListener,
 		layout.setConstraints(field, bagConstraints);
 		add(field);
 
-		field = createField("protocol", "TCP");
+		field = createField("protocol", registrySvc.get("protocol"));
 		bagConstraints.gridx++;
 		layout.setConstraints(field, bagConstraints);
 		add(field);
@@ -96,7 +100,7 @@ public class StatusBar extends JPanel implements ActionListener,
 		renderUptime();
 	}
 
-	@Factory
+	@Factory(Factory.Type.POJO)
 	protected JPanel createField(String tag, String text)
 	{
 		GridBagLayout layout = new GridBagLayout();

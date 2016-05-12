@@ -21,7 +21,7 @@ import java.util.Set;
 public interface RegistryService extends RegistryServiceApi,
                                          ServiceComposite
 {
-	@MixinNote("The default service implementation is based on java.util. Null values are not allowed to be inserted via the API")
+	@MixinNote("The default service implementation is based on java.util. The API doesn't allow null values")
 	public abstract class Mixin implements RegistryService
 	{
 		@Service
