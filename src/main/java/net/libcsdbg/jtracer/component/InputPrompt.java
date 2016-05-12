@@ -19,18 +19,18 @@ public class InputPrompt extends JDialog implements ActionListener,
 
 
 	@Service
-	protected LoggerService loggerSvc;
+	protected ComponentService componentSvc;
 
 	@Service
-	protected ComponentService componentSvc;
+	protected LoggerService loggerSvc;
 
 	@Service
 	protected UtilityService utilitySvc;
 
 
-	protected InputField input;
+	protected Boolean cancelled;
 
-	protected String replyLatch;
+	protected InputField inputField;
 
 
 	private InputPrompt()
@@ -39,12 +39,12 @@ public class InputPrompt extends JDialog implements ActionListener,
 
 	public InputPrompt(JFrame owner, String message)
 	{
-		super(owner, "Input prompt", true);
+		super(owner, "Prompt", true);
 		selfInject();
+		cancelled = true;
 
 		GridBagLayout layout = new GridBagLayout();
 		GridBagConstraints bagConstraints = new GridBagConstraints();
-		JPanel south = new JPanel(layout);
 
 		Button ok = new Button("Ok", this);
 		ok.setMnemonic(KeyEvent.VK_O);
@@ -52,13 +52,16 @@ public class InputPrompt extends JDialog implements ActionListener,
 		bagConstraints.gridx = 0;
 		bagConstraints.insets = Config.buttonMargin;
 		layout.setConstraints(ok, bagConstraints);
-		south.add(ok);
 
 		Button cancel = new Button("Cancel", this);
 		cancel.setMnemonic(KeyEvent.VK_C);
 		bagConstraints.gridx++;
 		layout.setConstraints(cancel, bagConstraints);
+
+		JPanel south = new JPanel(layout);
+		south.add(ok);
 		south.add(cancel);
+		add(south, BorderLayout.SOUTH);
 
 		JPanel center = new JPanel(layout);
 		ImageIcon icon = utilitySvc.loadIcon("prompt32.png");
@@ -72,14 +75,14 @@ public class InputPrompt extends JDialog implements ActionListener,
 		layout.setConstraints(l, bagConstraints);
 		center.add(l);
 
-		bagConstraints.gridx = 1;
-		bagConstraints.gridheight = 1;
+		bagConstraints.gridx++;
 		bagConstraints.insets = Config.textMargin;
 		bagConstraints.anchor = GridBagConstraints.WEST;
+		bagConstraints.gridheight = 1;
 
 		Font font = componentSvc.getFont("alert");
 		Color foreground = componentSvc.getForegroundColor("alert");
-		for (int i = 0; i < lines.length; i++) {
+		for (int i = 0, count = lines.length; i < count; i++) {
 			l = new JLabel(lines[i]);
 			l.setFont(font);
 			l.setForeground(foreground);
@@ -87,18 +90,19 @@ public class InputPrompt extends JDialog implements ActionListener,
 			bagConstraints.gridy = i;
 			layout.setConstraints(l, bagConstraints);
 			center.add(l);
-			bagConstraints.insets.top = 4;
+
+			if (i == 0) {
+				bagConstraints.insets.top = componentSvc.getLineSpacing("alert");
+			}
 		}
 
-		input = new InputField("Input Ready", (ActionListener) owner);
-		input.setFont(font);
+		inputField = new InputField("Ok", this);
 		bagConstraints.gridy++;
+		bagConstraints.ipadx = Config.inputFieldPadding;
 		bagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		layout.setConstraints(input, bagConstraints);
-		center.add(input);
-
+		layout.setConstraints(inputField, bagConstraints);
+		center.add(inputField);
 		add(center, BorderLayout.CENTER);
-		add(south, BorderLayout.SOUTH);
 
 		setResizable(false);
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -114,21 +118,24 @@ public class InputPrompt extends JDialog implements ActionListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		if (event.getActionCommand().equals("Ok")) {
-			replyLatch = input.getText();
+		if (!event.getActionCommand().equals("Cancel")) {
+			cancelled = false;
 		}
 
 		dispose();
 	}
 
-	public String getReply()
+	public String getInput()
 	{
-		return replyLatch;
+		return (cancelled) ? null : inputField.getText();
 	}
 
 
 	public static class Config
 	{
+		public static Integer inputFieldPadding = 200;
+
+
 		public static Insets buttonMargin = new Insets(12, 4, 4, 4);
 
 		public static Insets iconMargin = new Insets(12, 12, 0, 12);

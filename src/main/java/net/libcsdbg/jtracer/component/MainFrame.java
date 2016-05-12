@@ -166,7 +166,12 @@ public class MainFrame extends JFrame implements ActionListener,
 		}
 
 		else if (cmd.equals("Current log level")) {
-			new InputPrompt(this, cmd);
+			String reply = new InputPrompt(this, cmd + ":").getInput();
+			if (reply != null) {
+				loggerSvc.debug(getClass(), "Input: " + reply);
+				log.appendln(reply, "data");
+			}
+
 			logCurrentLogLevel();
 		}
 

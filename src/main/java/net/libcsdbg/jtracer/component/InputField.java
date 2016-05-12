@@ -16,7 +16,7 @@ public class InputField extends JTextField implements AutoInjectable
 	protected ComponentService componentSvc;
 
 
-	protected InputField()
+	public InputField()
 	{
 		this("");
 	}
@@ -51,7 +51,6 @@ public class InputField extends JTextField implements AutoInjectable
 		setForeground(componentSvc.getForegroundColor(widget));
 		setCaretColor(componentSvc.getCaretColor(widget));
 
-		/* Set selection colors */
 		setSelectionColor(componentSvc.getBackgroundColor(widget + "-selection"));
 		setSelectedTextColor(componentSvc.getForegroundColor(widget + "-selection"));
 

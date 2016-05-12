@@ -246,6 +246,19 @@ public interface ComponentService extends ComponentServiceApi,
 
 		@Factory(Factory.Type.POJO)
 		@Override
+		public Integer getLineSpacing(@WidgetDescriptor String widget)
+		{
+			String key = widget + "-line-spacing";
+			String param = registrySvc.get(key);
+			if (param == null) {
+				throw new RuntimeException("No configuration found for key '" + key + "'");
+			}
+
+			return Integer.parseInt(param.trim());
+		}
+
+		@Factory(Factory.Type.POJO)
+		@Override
 		public Locale getLocale(@WidgetDescriptor String widget)
 		{
 			String key = widget + "-locale";
@@ -275,9 +288,9 @@ public interface ComponentService extends ComponentServiceApi,
 			param = param.trim().toLowerCase();
 			return
 				param.equals("true") ||
-			    param.equals("yes") ||
-			    param.equals("on") ||
-			    param.equals("1");
+				param.equals("yes") ||
+				param.equals("on") ||
+				param.equals("1");
 		}
 
 		@Override
