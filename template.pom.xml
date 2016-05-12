@@ -25,20 +25,6 @@
                     <compilerArgument>-Xlint:all</compilerArgument>
                 </configuration>
             </plugin>
-
-            <!-- Used to configure jar artifacts -->
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.3.2</version>
-                <inherited>false</inherited>
-
-                <configuration>
-                    <archive>
-                        <manifestFile>src/main/resources/manifest.mf</manifestFile>
-                    </archive>
-                </configuration>
-            </plugin-->
         </plugins>
 
         <resources>
@@ -133,12 +119,11 @@
         <!-- Qi4j core, extensions, libraries and tools -->
         <qi4j.version>2.1</qi4j.version>
 
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
         <project.author>Tasos Parisinos</project.author>
         <project.author.mail>t.parisinos@gmail.com</project.author.mail>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.copyright>2013-2017</project.copyright>
-        <project.description>Stack Trace Visualization Tool</project.description>
+        <project.description>C/C++ Stack Trace Visualization Tool</project.description>
         <project.entryPoint>${groupId}.${artifactId}.core.ApplicationCore</project.entryPoint>
         <project.license>GNU General Public Licence v3</project.license>
         <project.poweredBy>Zest @ Apache Software Foundation</project.poweredBy>

@@ -1,5 +1,9 @@
 <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="Install jTracer-1.04 Jar (development-standard)" type="MavenRunConfiguration" factoryName="Maven" singleton="true">
+    <configuration default="false"
+                   name="Install jTracer-1.04 Jar (development-standard)"
+                   type="MavenRunConfiguration"
+                   factoryName="Maven"
+                   singleton="true">
         <MavenSettings>
             <option name="myGeneralSettings"/>
             <option name="myRunnerSettings"/>

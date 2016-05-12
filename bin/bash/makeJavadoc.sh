@@ -1,6 +1,6 @@
 #!/bin/bash
 
-prefix="/devel-1.0.1"
+prefix="~"
 
 if [ ! -z "$1" ]
 then
@@ -19,4 +19,3 @@ else
     echo "jTracer javadoc generation failed"
     exit 1
 fi
-

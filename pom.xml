@@ -145,51 +145,51 @@
     </properties>
 
     <profiles>
-		<profile>
-		    <id>development-standard</id>
-		
-		    <activation>
-		        <activeByDefault>true</activeByDefault>
-		    </activation>
-		
-		    <properties>
-		        <!-- Generic -->
-		        <build.phase>development</build.phase>
-		        <splash>theme/common/splash.png</splash>
-		
-		        <!-- Log4j log levels (for third party) -->
-		        <log4j.thirdParty.level.full>debug</log4j.thirdParty.level.full>
-		        <log4j.thirdParty.level.main>off</log4j.thirdParty.level.main>
-		        <log4j.thirdParty.level.console>debug</log4j.thirdParty.level.console>
-		
-		        <!-- Log4j2 log levels (for jTracer) -->
-		        <log4j.level.full>debug</log4j.level.full>
-		        <log4j.level.main>off</log4j.level.main>
-		        <log4j.level.console>debug</log4j.level.console>
-		    </properties>
-		</profile>
-		<profile>
-		    <id>release-standard</id>
-		
-		    <activation>
-		        <activeByDefault>false</activeByDefault>
-		    </activation>
-		
-		    <properties>
-		        <!-- Generic -->
-		        <build.phase>release</build.phase>
-		        <splash>theme/common/splash.png</splash>
-		
-		        <!-- Log4j log levels (for third party) -->
-		        <log4j.thirdParty.level.full>trace</log4j.thirdParty.level.full>
-		        <log4j.thirdParty.level.main>off</log4j.thirdParty.level.main>
-		        <log4j.thirdParty.level.console>off</log4j.thirdParty.level.console>
-		
-		        <!-- Log4j2 log levels (for jTracer) -->
-		        <log4j.level.full>trace</log4j.level.full>
-		        <log4j.level.main>off</log4j.level.main>
-		        <log4j.level.console>off</log4j.level.console>
-		    </properties>
-		</profile>
+        <profile>
+            <id>release-standard</id>
+
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <properties>
+                <!-- Generic -->
+                <build.phase>release</build.phase>
+                <splash>theme/common/splash.png</splash>
+
+                <!-- Log4j log levels (for third party) -->
+                <log4j.thirdParty.level.full>trace</log4j.thirdParty.level.full>
+                <log4j.thirdParty.level.main>off</log4j.thirdParty.level.main>
+                <log4j.thirdParty.level.console>off</log4j.thirdParty.level.console>
+
+                <!-- Log4j2 log levels (for jTracer) -->
+                <log4j.level.full>trace</log4j.level.full>
+                <log4j.level.main>off</log4j.level.main>
+                <log4j.level.console>off</log4j.level.console>
+            </properties>
+        </profile>
+        <profile>
+            <id>development-standard</id>
+
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+
+            <properties>
+                <!-- Generic -->
+                <build.phase>development</build.phase>
+                <splash>theme/common/splash.png</splash>
+
+                <!-- Log4j log levels (for third party) -->
+                <log4j.thirdParty.level.full>debug</log4j.thirdParty.level.full>
+                <log4j.thirdParty.level.main>off</log4j.thirdParty.level.main>
+                <log4j.thirdParty.level.console>debug</log4j.thirdParty.level.console>
+
+                <!-- Log4j2 log levels (for jTracer) -->
+                <log4j.level.full>debug</log4j.level.full>
+                <log4j.level.main>off</log4j.level.main>
+                <log4j.level.console>debug</log4j.level.console>
+            </properties>
+        </profile>
     </profiles>
 </project>

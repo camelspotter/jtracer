@@ -423,6 +423,7 @@ public class Session extends JFrame implements ActionListener,
 		status.setTimestamp(Long.parseLong(pane.getRequestSection("tstamp"), 16));
 
 		if (!pane.isVisited()) {
+			pane.setVisited(true);
 			tabs.setIconAt(i, utilitySvc.loadIcon("void.png"));
 		}
 	}

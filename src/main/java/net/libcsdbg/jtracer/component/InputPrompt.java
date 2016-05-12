@@ -28,7 +28,7 @@ public class InputPrompt extends JDialog implements ActionListener,
 	protected UtilityService utilitySvc;
 
 
-	protected TextInput input;
+	protected InputField input;
 
 	protected String replyLatch;
 
@@ -90,7 +90,7 @@ public class InputPrompt extends JDialog implements ActionListener,
 			bagConstraints.insets.top = 4;
 		}
 
-		input = new TextInput((ActionListener) owner);
+		input = new InputField("Input Ready", (ActionListener) owner);
 		input.setFont(font);
 		bagConstraints.gridy++;
 		bagConstraints.fill = GridBagConstraints.HORIZONTAL;
