@@ -45,6 +45,7 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 
 			viewer.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, true);
 			viewer.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);
+
 			viewer.setEditable(false);
 			viewer.setFocusable(false);
 			viewer.setMargin(Config.preferredMargin);
@@ -52,6 +53,10 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 
 			viewer.addHyperlinkListener(this);
 			add(viewer, BorderLayout.CENTER);
+
+			setResizable(false);
+			setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+			pack();
 		}
 		catch (RuntimeException err) {
 			dispose();
@@ -61,10 +66,6 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 			dispose();
 			throw new RuntimeException(err);
 		}
-
-		setResizable(false);
-		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		pack();
 	}
 
 	@Override
@@ -77,19 +78,17 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 		}
 
 		URL url = event.getURL();
-		String proto = url.getProtocol();
-
-		switch (proto) {
+		switch (url.getProtocol()) {
 		case "file":
 			setVisible(false);
 			break;
 
-		case "mailto":
-			utilitySvc.mailTo(url);
-			break;
-
 		case "http":
 			utilitySvc.browse(url);
+			break;
+
+		case "mailto":
+			utilitySvc.mailTo(url);
 		}
 	}
 
@@ -100,6 +99,6 @@ public class AboutDialog extends JDialog implements HyperlinkListener,
 
 		public static Insets preferredMargin = new Insets(0, 0, 0, 0);
 
-		public static Dimension preferredSize = new Dimension(360, 406);
+		public static Dimension preferredSize = new Dimension(430, 410);
 	}
 }

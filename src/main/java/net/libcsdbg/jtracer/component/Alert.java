@@ -19,10 +19,10 @@ public class Alert extends JDialog implements ActionListener,
 
 
 	@Service
-	protected LoggerService loggerSvc;
+	protected ComponentService componentSvc;
 
 	@Service
-	protected ComponentService componentSvc;
+	protected LoggerService loggerSvc;
 
 	@Service
 	protected UtilityService utilitySvc;
@@ -57,18 +57,6 @@ public class Alert extends JDialog implements ActionListener,
 
 		ImageIcon icon = null;
 		switch (type) {
-		case prompt:
-			setTitle("Prompt");
-			icon = utilitySvc.loadIcon("prompt32.png");
-
-			layout.setConstraints(ok, bagConstraints);
-			south.add(ok);
-
-			bagConstraints.gridx++;
-			layout.setConstraints(cancel, bagConstraints);
-			south.add(cancel);
-			break;
-
 		case error:
 			setTitle("Error");
 			icon = utilitySvc.loadIcon("error32.png");
@@ -81,6 +69,18 @@ public class Alert extends JDialog implements ActionListener,
 			icon = utilitySvc.loadIcon("info32.png");
 			layout.setConstraints(ok, bagConstraints);
 			south.add(ok);
+			break;
+
+		case prompt:
+			setTitle("Prompt");
+			icon = utilitySvc.loadIcon("prompt32.png");
+
+			layout.setConstraints(ok, bagConstraints);
+			south.add(ok);
+
+			bagConstraints.gridx++;
+			layout.setConstraints(cancel, bagConstraints);
+			south.add(cancel);
 		}
 
 		String lines[] = message.split("\\n");
@@ -93,14 +93,14 @@ public class Alert extends JDialog implements ActionListener,
 		layout.setConstraints(l, bagConstraints);
 		center.add(l);
 
-		bagConstraints.gridx = 1;
+		bagConstraints.gridx++;
 		bagConstraints.gridheight = 1;
 		bagConstraints.insets = Config.textMargin;
 		bagConstraints.anchor = GridBagConstraints.WEST;
 
 		Font font = componentSvc.getFont("alert");
 		Color foreground = componentSvc.getForegroundColor("alert");
-		for (int i = 0; i < lines.length; i++) {
+		for (int i = 0, count = lines.length; i < count; i++) {
 			l = new JLabel(lines[i]);
 			l.setFont(font);
 			l.setForeground(foreground);
@@ -108,7 +108,10 @@ public class Alert extends JDialog implements ActionListener,
 			bagConstraints.gridy = i;
 			layout.setConstraints(l, bagConstraints);
 			center.add(l);
-			bagConstraints.insets.top = 4;
+
+			if (i == 0) {
+				bagConstraints.insets.top = 4;
+			}
 		}
 
 		add(center, BorderLayout.CENTER);
@@ -161,19 +164,11 @@ public class Alert extends JDialog implements ActionListener,
 
 	public static enum AlertType
 	{
-		error(0x01),
+		error,
 
-		information(0x02),
+		information,
 
-		prompt(0x04);
-
-
-		protected Integer ordinal;
-
-		private AlertType(Integer ordinal)
-		{
-			this.ordinal = ordinal;
-		}
+		prompt
 	}
 
 	public static class Config

@@ -1,6 +1,7 @@
 body, table, p {
     background-color: #3e5e88;
     color: #eeeeee;
+    line-height: 160%;
     margin: 0;
     padding: 0;
     font-family: Ubuntu, Tahoma, Roboto, Dialog, sans-serif;
