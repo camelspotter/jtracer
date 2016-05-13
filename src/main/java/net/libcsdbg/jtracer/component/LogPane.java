@@ -46,7 +46,7 @@ public class LogPane extends JTextPane implements AutoInjectable
 			StyleConstants.setRightIndent(style, padding);
 		}
 
-		param = registrySvc.get("log-line-height");
+		param = registrySvc.get("log-line-spacing");
 		if (param != null) {
 			StyleConstants.setLineSpacing(style, Float.parseFloat(param.trim()));
 		}
@@ -64,8 +64,8 @@ public class LogPane extends JTextPane implements AutoInjectable
 		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-debug"));
 
 		/* Based on the default style create a style for each type of message */
-		style = addStyle("status", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-status"));
+		style = addStyle("alert", style);
+		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-alert"));
 
 		style = addStyle("data", style);
 		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-data"));
@@ -73,8 +73,11 @@ public class LogPane extends JTextPane implements AutoInjectable
 		style = addStyle("error", style);
 		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-error"));
 
-		style = addStyle("alert", style);
-		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-alert"));
+		style = addStyle("prompt", style);
+		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-prompt"));
+
+		style = addStyle("status", style);
+		StyleConstants.setForeground(style, componentSvc.getForegroundColor("log-status"));
 
 		/* Set selection colors */
 		setSelectionColor(componentSvc.getBackgroundColor("log-selection"));
@@ -91,8 +94,8 @@ public class LogPane extends JTextPane implements AutoInjectable
 		if (SwingUtilities.isEventDispatchThread()) {
 			try {
 				Document doc = getDocument();
-
 				int length = doc.getLength();
+
 				doc.insertString(length, line, getStyle(tag));
 				setCaretPosition(length + line.length());
 			}
@@ -126,8 +129,7 @@ public class LogPane extends JTextPane implements AutoInjectable
 
 	public LogPane appendln(String line, String tag, Boolean... sync)
 	{
-		append(tag + "> ", "debug", sync);
-		return append(line + "\n", tag, sync);
+		return append(tag + "> ", "prompt", sync).append(line + "\n", tag, sync);
 	}
 
 	public LogPane clear()

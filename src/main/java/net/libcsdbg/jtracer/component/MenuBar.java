@@ -1,5 +1,7 @@
 package net.libcsdbg.jtracer.component;
 
+import net.libcsdbg.jtracer.annotation.Factory;
+import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
@@ -18,10 +20,12 @@ import java.beans.PropertyChangeListener;
 import java.util.List;
 
 import static java.awt.event.KeyEvent.*;
+import static net.libcsdbg.jtracer.component.MenuBar.MenuType.*;
 
+@Note("All methods that alter the UI are called from within the Event Dispatching Thread")
 public class MenuBar extends JMenuBar implements ActionListener,
-                                                 PropertyChangeListener,
-                                                 AutoInjectable
+                                                 AutoInjectable,
+                                                 PropertyChangeListener
 {
 	private static final long serialVersionUID = 7115815907319975508L;
 
@@ -39,9 +43,9 @@ public class MenuBar extends JMenuBar implements ActionListener,
 	protected UtilityService utilitySvc;
 
 
-	protected Boolean[] toggleStates = { true, true, false };
-
 	protected ActionListener handler;
+
+	protected Boolean[] toggleStates = { true, true, false };
 
 
 	private MenuBar()
@@ -129,6 +133,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		add(menu);
 	}
 
+	@Note("Only the toggle menu items are registered with this action listener")
 	@Override
 	public void actionPerformed(ActionEvent event)
 	{
@@ -148,14 +153,14 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		toggleStates[index] = state;
 		String icon = ((state) ? "on" : "off") + "16.png";
 
-		getMenu(1).getItem(index)
-		          .setIcon(utilitySvc.loadIcon(icon));
+		getMenu(view.ordinal()).getItem(index)
+		                       .setIcon(utilitySvc.loadIcon(icon));
 	}
 
+	@Factory(Factory.Type.POJO)
 	protected JMenuItem createItem(String text, Integer mnemonic, Integer accelerator)
 	{
 		JMenuItem retval = new JMenuItem(text + "  ");
-		retval.setMnemonic(mnemonic);
 
 		retval.setFont(componentSvc.getFont("component"));
 		retval.setForeground(componentSvc.getForegroundColor("component"));
@@ -165,6 +170,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 			retval.setMultiClickThreshhold(Integer.parseInt(param.trim()));
 		}
 
+		retval.setMnemonic(mnemonic);
 		if (accelerator != 0) {
 			int modifiers = 0;
 			if (accelerator < VK_F1 || accelerator > VK_F12) {
@@ -176,7 +182,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 
 		/* The action command is the item caption with the trailing dots and dash-separated suffix trimmed */
 		int index = text.indexOf('-');
-		if (index > 1) {
+		if (index >= 1) {
 			text = text.substring(0, index);
 		}
 
@@ -189,10 +195,10 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		return retval;
 	}
 
+	@Factory(Factory.Type.POJO)
 	protected JMenuItem createToggle(String text, Integer index, Integer mnemonic)
 	{
 		JMenuItem retval = new JMenuItem(text);
-		retval.setMnemonic(mnemonic);
 
 		retval.setFont(componentSvc.getFont("component"));
 		retval.setForeground(componentSvc.getForegroundColor("component"));
@@ -202,23 +208,28 @@ public class MenuBar extends JMenuBar implements ActionListener,
 			retval.setMultiClickThreshhold(Integer.parseInt(param.trim()));
 		}
 
+		retval.setMnemonic(mnemonic);
 		retval.setActionCommand(text);
 		retval.addActionListener(handler);
 		retval.addActionListener(this);
 
-		String icon = ((toggleStates[index]) ? "on" : "off") + "16.png";
+		String icon = (getToggleState(index) ? "on" : "off") + "16.png";
 		retval.setIcon(utilitySvc.loadIcon(icon));
 		return retval;
 	}
 
 	public Boolean getToggleState(Integer index)
 	{
+		if (index < 0 || index > 2) {
+			return false;
+		}
+
 		return toggleStates[index];
 	}
 
 	public MenuBar listSessions(List<Session> sessions, Integer selected)
 	{
-		JMenu menu = getMenu(2);
+		JMenu menu = getMenu(session.ordinal());
 		while (menu.getMenuComponentCount() > 8) {
 			menu.remove(8);
 		}
@@ -243,7 +254,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		ImageIcon offIcon = utilitySvc.loadIcon("voidrect16.png");
 
 		for (int i = 0; i < size; i++) {
-			JFrame window = sessions.get(i);
+			Session window = sessions.get(i);
 
 			JMenuItem item = new JMenuItem(window.getTitle() + "  ");
 			item.setFont(font);
@@ -270,16 +281,13 @@ public class MenuBar extends JMenuBar implements ActionListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		String key = event.getPropertyName();
-		Object value = event.getNewValue();
-
 		for (int i = getMenuCount() - 1; i >= 0; i--) {
 			JMenu menu = getMenu(i);
 
 			for (int j = menu.getMenuComponentCount() - 1; j >= 0; j--) {
 				Component c = menu.getMenuComponent(j);
 				if (c instanceof JMenuItem) {
-					renderItem(c, i, j, key, value);
+					renderItem(c, i, j, event.getPropertyName(), event.getNewValue());
 				}
 			}
 		}
@@ -290,7 +298,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		boolean enabled = (Boolean) value;
 
 		if (key.equals("isServing")) {
-			if (menu != 0) {
+			if (menu != service.ordinal()) {
 				return this;
 			}
 
@@ -306,15 +314,13 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		}
 
 		else if (key.equals("hasClients")) {
-			switch (menu) {
-			case 1:
+			if (menu == view.ordinal()) {
 				if (index == 4) {
 					c.setEnabled(enabled);
 				}
+			}
 
-				break;
-
-			case 2:
+			else if (menu == session.ordinal()) {
 				if (index < 8) {
 					c.setEnabled(enabled);
 				}
@@ -326,16 +332,29 @@ public class MenuBar extends JMenuBar implements ActionListener,
 
 	public MenuBar setSelectedSession(Integer index)
 	{
-		JMenu menu = getMenu(2);
+		JMenu menu = getMenu(session.ordinal());
 
 		ImageIcon onIcon = utilitySvc.loadIcon("on16.png");
 		ImageIcon offIcon = utilitySvc.loadIcon("voidrect16.png");
 
+		index += 9;
 		for (int i = menu.getMenuComponentCount() - 1; i >= 9; i--) {
 			JMenuItem item = (JMenuItem) menu.getMenuComponent(i);
-			item.setIcon((i - 9 == index) ? onIcon : offIcon);
+			item.setIcon((i == index) ? onIcon : offIcon);
 		}
 
 		return this;
+	}
+
+
+	public static enum MenuType
+	{
+		service,
+
+		view,
+
+		session,
+
+		help
 	}
 }

@@ -18,9 +18,9 @@ import java.beans.PropertyChangeListener;
 import java.net.*;
 
 public class MainFrame extends JFrame implements ActionListener,
+                                                 AutoInjectable,
                                                  PropertyChangeListener,
-                                                 Runnable,
-                                                 AutoInjectable
+                                                 Runnable
 {
 	private static final long serialVersionUID = 1201750874107334406L;
 
@@ -166,12 +166,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		}
 
 		else if (cmd.equals("Current log level")) {
-			String reply = new InputPrompt(this, cmd + ":").getInput();
-			if (reply != null) {
-				loggerSvc.debug(getClass(), "Input: " + reply);
-				log.appendln(reply, "data");
-			}
-
+			log.appendln("This is a debug message", "debug");
 			logCurrentLogLevel();
 		}
 
@@ -429,7 +424,7 @@ public class MainFrame extends JFrame implements ActionListener,
 				}
 				catch (Throwable err) {
 					if (err instanceof SocketException) {
-						log.appendln("Listener socket session terminated", "error");
+						log.appendln("Listener socket session terminated", "alert");
 					}
 					else {
 						log.appendln(err.getMessage(), "error");

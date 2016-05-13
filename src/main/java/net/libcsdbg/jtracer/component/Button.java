@@ -12,8 +12,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-public class Button extends JButton implements MouseListener,
-                                               AutoInjectable
+public class Button extends JButton implements AutoInjectable,
+                                               MouseListener
+
 {
 	private static final long serialVersionUID = -427470634379746246L;
 

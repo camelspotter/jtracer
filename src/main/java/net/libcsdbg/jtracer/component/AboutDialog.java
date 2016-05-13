@@ -13,8 +13,9 @@ import java.awt.*;
 import java.io.File;
 import java.net.URL;
 
-public class AboutDialog extends JDialog implements HyperlinkListener,
-                                                    AutoInjectable
+public class AboutDialog extends JDialog implements AutoInjectable,
+                                                    HyperlinkListener
+
 {
 	private static final long serialVersionUID = -3746398566140659455L;
 
