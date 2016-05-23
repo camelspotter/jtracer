@@ -44,7 +44,7 @@ public class StatusBar extends JPanel implements ActionListener,
 
 	public StatusBar()
 	{
-		this("n/a");
+		this(Config.undefinedValue);
 	}
 
 	public StatusBar(String message)
@@ -52,8 +52,8 @@ public class StatusBar extends JPanel implements ActionListener,
 		super();
 		selfInject();
 
-		uptime = 0L;
 		fields = new HashMap<>(5);
+		uptime = 0L;
 
 		GridBagLayout layout = new GridBagLayout();
 		GridBagConstraints bagConstraints = new GridBagConstraints();
@@ -63,7 +63,6 @@ public class StatusBar extends JPanel implements ActionListener,
 		bagConstraints.gridx = 0;
 		bagConstraints.gridy = 0;
 		bagConstraints.weightx = 1;
-		bagConstraints.insets = new Insets(0, 0, 0, 0);
 		bagConstraints.fill = GridBagConstraints.HORIZONTAL;
 		layout.setConstraints(field, bagConstraints);
 		add(field);
@@ -75,7 +74,12 @@ public class StatusBar extends JPanel implements ActionListener,
 		layout.setConstraints(field, bagConstraints);
 		add(field);
 
-		field = createField("protocol", registrySvc.get("protocol"));
+		String param = registrySvc.get("protocol");
+		if (param == null) {
+			param = Config.undefinedValue;
+		}
+
+		field = createField("protocol", param.trim());
 		bagConstraints.gridx++;
 		layout.setConstraints(field, bagConstraints);
 		add(field);
@@ -117,6 +121,7 @@ public class StatusBar extends JPanel implements ActionListener,
 		if (tag.equals("status")) {
 			field.setIcon(utilitySvc.loadIcon("stat_ok.png"));
 			field.setIconTextGap(Config.iconTextGap);
+
 			bagConstraints.weightx = 1;
 			bagConstraints.anchor = GridBagConstraints.EAST;
 		}
@@ -280,5 +285,7 @@ public class StatusBar extends JPanel implements ActionListener,
 	public static class Config
 	{
 		public static Integer iconTextGap = 6;
+
+		public static String undefinedValue = "n/a";
 	}
 }

@@ -25,6 +25,38 @@
                     <compilerArgument>-Xlint:all</compilerArgument>
                 </configuration>
             </plugin>
+
+            <!-- Used to configure the output jar and its manifest -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>${project.entryPoint}</mainClass>
+                        </manifest>
+                        <manifestEntries>
+                            <Class-Path>lib/</Class-Path>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- Used to package dependencies within the output jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
 
         <resources>
@@ -32,6 +64,10 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+            </resource>
+
+            <resource>
+                <directory>${basedir}/target/dependency</directory>
             </resource>
         </resources>
     </build>
@@ -123,7 +159,7 @@
         <project.author.mail>t.parisinos@gmail.com</project.author.mail>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.copyright>2013-2017</project.copyright>
-        <project.description>C/C++ Stack Trace Visualization Tool</project.description>
+        <project.description>C/C++ Stack Trace Visualizer</project.description>
         <project.entryPoint>${groupId}.${artifactId}.core.ApplicationCore</project.entryPoint>
         <project.license>GNU General Public Licence v3</project.license>
         <project.poweredBy>Zest @ Apache Software Foundation</project.poweredBy>

@@ -10,10 +10,7 @@ import net.libcsdbg.jtracer.service.text.parse.Tokenizer;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
-import javax.swing.text.Document;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
+import javax.swing.text.*;
 import java.awt.*;
 import java.util.Map;
 
@@ -70,10 +67,19 @@ public class TracePane extends JTextPane implements AutoInjectable
 			StyleConstants.setLineSpacing(style, Float.parseFloat(param.trim()));
 		}
 
+		int tabSize = Config.defaultTabSize;
+		param = registrySvc.get("trace-tab-size");
+		if (param != null) {
+			tabSize = Integer.parseInt(param.trim());
+		}
+
+		TabSet tabs = new TabSet(new TabStop[]{ new TabStop(tabSize) });
+		StyleConstants.setTabSet(style, tabs);
+
 		StyleConstants.setAlignment(style, StyleConstants.ALIGN_JUSTIFIED);
 		setParagraphAttributes(style, true);
 
-		/* Setup the default (plain) style */
+		/* Setup the default style font attributes */
 		Font font = componentSvc.getFont("trace");
 		StyleConstants.setFontFamily(style, font.getFamily());
 		StyleConstants.setFontSize(style, font.getSize());
@@ -100,6 +106,8 @@ public class TracePane extends JTextPane implements AutoInjectable
 		setMargin(componentSvc.getInsets("trace"));
 		setEditable(false);
 		setAutoscrolls(true);
+
+		append(request.get("trace").replace("  ", "\t"));
 	}
 
 	public TracePane append(String trace)
@@ -163,5 +171,11 @@ public class TracePane extends JTextPane implements AutoInjectable
 	{
 		this.visited = visited;
 		return this;
+	}
+
+
+	public static class Config
+	{
+		public static Integer defaultTabSize = 8;
 	}
 }

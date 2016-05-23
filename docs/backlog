@@ -6,5 +6,7 @@ D {
     Sanitize theme icons (lock16, remove_trace16, unlock16)
     Update splash screen
     Add license file (GPLv3)
-    Finalize look and feel, colors, create alternative themes
+    Create alternative themes
+    Print dates using Locale
+    Infinite keep-alive timeout
 }

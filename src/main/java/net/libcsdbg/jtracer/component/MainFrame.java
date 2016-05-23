@@ -2,7 +2,6 @@ package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.core.ApplicationCore;
 import net.libcsdbg.jtracer.core.AutoInjectable;
-import net.libcsdbg.jtracer.core.GenericUncaughtExceptionHandler;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
@@ -40,11 +39,13 @@ public class MainFrame extends JFrame implements ActionListener,
 
 	protected AboutDialog about;
 
-	protected SessionManager desktop;
+	protected Desktop desktop;
 
 	protected LogPane log;
 
 	protected MenuBar menu;
+
+	protected InputPrompt searchPrompt;
 
 	protected StatusBar status;
 
@@ -64,17 +65,22 @@ public class MainFrame extends JFrame implements ActionListener,
 		selfInject();
 
 		String fullName = registrySvc.get("full-name");
+		if (fullName == null) {
+			fullName = Config.name;
+		}
+
+		fullName = fullName.trim();
 		setTitle(fullName);
 		setIconImages(utilitySvc.getProjectIcons());
 
 		daemonActive = false;
+		desktop = new Desktop(this);
+		addWindowListener(desktop);
+
 		menu = new MenuBar(this);
 		tools = new ToolBar(this);
 		log = new LogPane();
 		status = new StatusBar(fullName + " initialized");
-
-		desktop = new SessionManager(this);
-		addWindowListener(desktop);
 
 		setJMenuBar(menu);
 		add(tools, BorderLayout.NORTH);
@@ -158,7 +164,17 @@ public class MainFrame extends JFrame implements ActionListener,
 		}
 
 		else if (cmd.equals("Find")) {
-			Alert.error(this, "Not implemented yet", false);
+			if (searchPrompt == null) {
+				searchPrompt = new InputPrompt(this, "Text to find:");
+			}
+
+			searchPrompt.setLocationRelativeTo(this);
+			searchPrompt.setVisible(true);
+
+			String text = searchPrompt.getInput();
+			if (text != null && (text = text.trim()).length() > 0) {
+				log.appendln("Searched text -> " + text, "debug");
+			}
 		}
 
 		else if (cmd.equals("Preferences")) {
@@ -166,7 +182,6 @@ public class MainFrame extends JFrame implements ActionListener,
 		}
 
 		else if (cmd.equals("Current log level")) {
-			log.appendln("This is a debug message", "debug");
 			logCurrentLogLevel();
 		}
 
@@ -183,33 +198,33 @@ public class MainFrame extends JFrame implements ActionListener,
 		}
 
 		else if (cmd.equals("Full screen")) {
-			GraphicsDevice device =
+			GraphicsDevice screen =
 				GraphicsEnvironment.getLocalGraphicsEnvironment()
 				                   .getDefaultScreenDevice();
 
-			if (!device.isFullScreenSupported()) {
-				String message = "Graphics device '" + device.getIDstring() + "' doesn't support full screen windows";
+			if (!screen.isFullScreenSupported()) {
+				String message = "Graphics device '" + screen.getIDstring() + "' doesn't support full screen windows";
 				log.appendln(message, "alert");
 				loggerSvc.warning(getClass(), message);
 				return;
 			}
 
-			JFrame current = (JFrame) device.getFullScreenWindow();
+			Window current = screen.getFullScreenWindow();
 			if (current == null) {
-				device.setFullScreenWindow(this);
+				screen.setFullScreenWindow(this);
 			}
 			else {
-				device.setFullScreenWindow(null);
+				screen.setFullScreenWindow(null);
 			}
 		}
 
 		/* Client menu commands */
 		else if (cmd.equals("Select previous")) {
-			desktop.shiftSelection(-1);
+			desktop.shiftSessionSelection(true);
 		}
 
 		else if (cmd.equals("Select next")) {
-			desktop.shiftSelection(1);
+			desktop.shiftSessionSelection(false);
 		}
 
 		else if (cmd.equals("Close")) {
@@ -256,7 +271,7 @@ public class MainFrame extends JFrame implements ActionListener,
 			}
 
 			try {
-				utilitySvc.browse(new URL(url));
+				utilitySvc.browse(new URL(url.trim()));
 			}
 			catch (MalformedURLException err) {
 				throw new RuntimeException(err);
@@ -294,7 +309,7 @@ public class MainFrame extends JFrame implements ActionListener,
 		bagConstraints.weightx = 1;
 		bagConstraints.weighty = 1;
 		bagConstraints.fill = GridBagConstraints.BOTH;
-		bagConstraints.insets = new Insets(0, 2, 0, 1);
+		bagConstraints.insets = Config.logViewportInsets;
 
 		layout.setConstraints(viewport, bagConstraints);
 		inset.add(viewport);
@@ -319,15 +334,13 @@ public class MainFrame extends JFrame implements ActionListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		String key = event.getPropertyName();
 		Object value = event.getNewValue();
-
-		switch (key) {
+		switch (event.getPropertyName()) {
 		case "sessionCount":
 			firePropertyChange("hasClients", null, (Integer) value != 0);
 
 		case "traceCount":
-			menu.listSessions(desktop.getSessions(), desktop.getCurrent());
+			menu.listSessions(desktop.getSessions(), desktop.getCurrentIndex());
 			status.setIndicators(desktop.getSessionCount(), desktop.getTraceCount());
 			break;
 
@@ -344,6 +357,7 @@ public class MainFrame extends JFrame implements ActionListener,
 	@Override
 	public void run()
 	{
+		/* In sync with startService */
 		synchronized (this) {
 			daemonActive = true;
 			notifyAll();
@@ -361,7 +375,7 @@ public class MainFrame extends JFrame implements ActionListener,
 					break;
 				}
 
-				String[] parts = param.split(",");
+				String[] parts = param.split(":");
 				if (parts.length != 2) {
 					break;
 				}
@@ -420,7 +434,7 @@ public class MainFrame extends JFrame implements ActionListener,
 						    .getHostAddress();
 
 					log.appendln("Connected peer @" + peerAddress + ":" + peer.getPort(), "status");
-					desktop.register(peer);
+					desktop.registerPeer(peer);
 				}
 				catch (Throwable err) {
 					if (err instanceof SocketException) {
@@ -474,11 +488,16 @@ public class MainFrame extends JFrame implements ActionListener,
 
 		log.appendln("Starting server...", "status");
 
-		daemon = new Thread(Thread.currentThread().getThreadGroup(), this, Config.daemonName);
-		daemon.setUncaughtExceptionHandler(new GenericUncaughtExceptionHandler());
-		daemon.setDaemon(true);
-		daemon.start();
+		ThreadGroup group =
+			Thread.currentThread()
+			      .getThreadGroup();
 
+		daemon = new Thread(group, this, Config.daemonName);
+		daemon.setDaemon(true);
+		daemon.setUncaughtExceptionHandler(ApplicationCore.getCurrentApplicationCore()
+		                                                  .getUncaughtExceptionHandler());
+
+		daemon.start();
 		while (!daemonActive) {
 			try {
 				wait();
@@ -517,10 +536,14 @@ public class MainFrame extends JFrame implements ActionListener,
 	{
 		public static Integer defaultPort = 4242;
 
+		public static Insets logViewportInsets = new Insets(0, 2, 0, 1);
+
 
 		public static String daemonName = "LDP Service Thread";
 
 		public static String ipPattern = "^([0-9]{1,3}\\.){3}[0-9]{1,3}$";
+
+		public static String name = "jTracer";
 
 		public static String portPattern = "^[0-9]{1,5}$";
 	}

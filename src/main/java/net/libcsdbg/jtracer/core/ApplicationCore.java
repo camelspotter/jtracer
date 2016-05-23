@@ -18,8 +18,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.channels.FileLock;
 
-public class ApplicationCore implements WindowListener,
-                                        AutoInjectable
+public class ApplicationCore implements AutoInjectable,
+                                        WindowListener
 {
 	protected static ApplicationCore current = null;
 
@@ -299,7 +299,10 @@ public class ApplicationCore implements WindowListener,
 	@SuppressWarnings("all")
 	protected ApplicationCore registerThreadUncaughtExceptionHandlers()
 	{
-		ThreadGroup group = Thread.currentThread().getThreadGroup();
+		ThreadGroup group =
+			Thread.currentThread()
+			      .getThreadGroup();
+
 		ThreadGroup parent;
 		while ((parent = group.getParent()) != null) {
 			group = parent;

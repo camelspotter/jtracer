@@ -11,9 +11,9 @@ import java.util.*;
 
 public class Architecture
 {
-	protected final Map<LayerDetailDescriptor, List<ModuleDetailDescriptor>> structure;
-
 	protected ApplicationDetailDescriptor rootModel;
+
+	protected final Map<LayerDetailDescriptor, List<ModuleDetailDescriptor>> structure;
 
 
 	public Architecture(ApplicationDescriptor descriptor)

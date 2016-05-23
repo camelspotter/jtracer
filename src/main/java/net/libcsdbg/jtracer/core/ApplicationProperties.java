@@ -15,11 +15,6 @@ public class ApplicationProperties
 	protected String source;
 
 
-	public ApplicationProperties()
-	{
-		this(null);
-	}
-
 	public ApplicationProperties(String source)
 	{
 		properties = new Properties();
@@ -43,16 +38,16 @@ public class ApplicationProperties
 
 	public Application.Mode getApplicationMode()
 	{
-		if (isTestBuild()) {
-			return Application.Mode.test;
-		}
-
-		else if (isContinuousIntegrationBuild()) {
+		if (isContinuousIntegrationBuild()) {
 			return Application.Mode.staging;
 		}
 
 		else if (isReleaseBuild()) {
 			return Application.Mode.production;
+		}
+
+		else if (isTestBuild()) {
+			return Application.Mode.test;
 		}
 
 		else {

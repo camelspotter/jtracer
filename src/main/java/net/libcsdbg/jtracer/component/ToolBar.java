@@ -13,8 +13,8 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-public class ToolBar extends JToolBar implements PropertyChangeListener,
-                                                 AutoInjectable
+public class ToolBar extends JToolBar implements AutoInjectable,
+                                                 PropertyChangeListener
 {
 	private static final long serialVersionUID = -1810400400518571298L;
 
@@ -32,10 +32,8 @@ public class ToolBar extends JToolBar implements PropertyChangeListener,
 	protected ActionListener handler;
 
 
-	public ToolBar()
+	private ToolBar()
 	{
-		super();
-		selfInject();
 	}
 
 	public ToolBar(ActionListener owner)
@@ -44,8 +42,13 @@ public class ToolBar extends JToolBar implements PropertyChangeListener,
 		selfInject();
 		handler = owner;
 
+		String param = registrySvc.get("full-name");
+		if (param == null) {
+			param = MainFrame.Config.name;
+		}
+
 		/* Setting a new border removes the float handle. To properly set the border, get the current (probably matte) border and set its properties */
-		setName(registrySvc.get("full-name") + " tools");
+		setName(param.trim() + " tools");
 		setRollover(false);
 
 		add(createTool("Start"));
@@ -71,9 +74,9 @@ public class ToolBar extends JToolBar implements PropertyChangeListener,
 	@Factory(Factory.Type.POJO)
 	protected Button createTool(String command)
 	{
-		String name = command.toLowerCase().replace(' ', '_') + "24.png";
+		String icon = command.toLowerCase().replace(' ', '_') + "24.png";
 
-		Button retval = new Button(name, command, handler);
+		Button retval = new Button(icon, command, handler);
 		retval.setMargin(componentSvc.getInsets("component"));
 
 		return retval;
@@ -84,13 +87,11 @@ public class ToolBar extends JToolBar implements PropertyChangeListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		String key = event.getPropertyName();
-		Object value = event.getNewValue();
-
 		for (int i = getComponentCount() - 1; i >= 0; i--) {
 			Component c = getComponent(i);
+
 			if (c instanceof Button) {
-				renderTool(c, i, key, value);
+				renderTool(c, i, event.getPropertyName(), event.getNewValue());
 			}
 		}
 	}

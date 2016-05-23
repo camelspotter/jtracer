@@ -107,10 +107,6 @@ public class InputPrompt extends JDialog implements ActionListener,
 		setResizable(false);
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		pack();
-		setLocationRelativeTo(owner);
-
-		getToolkit().beep();
-		setVisible(true);
 	}
 
 	@Override
@@ -128,6 +124,13 @@ public class InputPrompt extends JDialog implements ActionListener,
 	public String getInput()
 	{
 		return (cancelled) ? null : inputField.getText();
+	}
+
+	@Override
+	public void setVisible(boolean visible)
+	{
+		cancelled = true;
+		super.setVisible(visible);
 	}
 
 

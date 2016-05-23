@@ -1,5 +1,6 @@
 package net.libcsdbg.jtracer.component;
 
+import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
@@ -30,8 +31,8 @@ public class TraceStatusBar extends JPanel implements AutoInjectable
 	{
 		super();
 		selfInject();
+		fields = new HashMap<>(3);
 
-		fields = new HashMap<>();
 		GridBagLayout layout = new GridBagLayout();
 		GridBagConstraints bagConstraints = new GridBagConstraints();
 		setLayout(layout);
@@ -40,7 +41,6 @@ public class TraceStatusBar extends JPanel implements AutoInjectable
 		bagConstraints.gridx = 0;
 		bagConstraints.gridy = 0;
 		bagConstraints.weightx = 1;
-		bagConstraints.insets = new Insets(0, 0, 0, 0);
 		bagConstraints.fill = GridBagConstraints.HORIZONTAL;
 		layout.setConstraints(field, bagConstraints);
 		add(field);
@@ -72,6 +72,7 @@ public class TraceStatusBar extends JPanel implements AutoInjectable
 		return this;
 	}
 
+	@Factory(Factory.Type.POJO)
 	protected JPanel createField(String name)
 	{
 		GridBagLayout layout = new GridBagLayout();
@@ -100,10 +101,7 @@ public class TraceStatusBar extends JPanel implements AutoInjectable
 
 	public TraceStatusBar setAddress(String address, Integer port)
 	{
-		fields.get("address")
-		      .setText(address + ":" + port);
-
-		return this;
+		return setField("address", address + ":" + port);
 	}
 
 	public TraceStatusBar setField(String name, String text)
@@ -116,10 +114,7 @@ public class TraceStatusBar extends JPanel implements AutoInjectable
 
 	public TraceStatusBar setMessage(String message)
 	{
-		fields.get("message")
-		      .setText(message);
-
-		return this;
+		return setField("message", message);
 	}
 
 	@Note("Timestamp is in microseconds")
@@ -155,10 +150,7 @@ public class TraceStatusBar extends JPanel implements AutoInjectable
 		text.append((temporal < 10) ? "0" : "")
 		    .append(temporal);
 
-		fields.get("timestamp")
-		      .setText(text.toString());
-
-		return this;
+		return setField("timestamp", text.toString());
 	}
 
 

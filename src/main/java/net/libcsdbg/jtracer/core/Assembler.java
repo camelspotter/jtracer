@@ -1,5 +1,6 @@
 package net.libcsdbg.jtracer.core;
 
+import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.component.*;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
@@ -24,6 +25,7 @@ public class Assembler implements ApplicationAssembler
 		this.properties = properties;
 	}
 
+	@Factory(Factory.Type.POJO)
 	@Override
 	public ApplicationAssembly assemble(ApplicationAssemblyFactory factory) throws AssemblyException
 	{
@@ -37,22 +39,29 @@ public class Assembler implements ApplicationAssembler
 		ModuleAssembly module = layer.module("service");
 
 		/* In dependency order */
-		registerLoggerService(module);
-		registerRegistryService(module);
-		registerComponentService(module);
-		registerUtilityService(module);
-		registerDictionaryService(module);
+		assembleLoggerService(module);
+		assembleRegistryService(module);
+		assembleComponentService(module);
+		assembleUtilityService(module);
+		assembleDictionaryService(module);
 
 		module = layer.module("core");
-		registerCoreObjects(module);
+		assembleCoreObjects(module);
 
-		module = layer.module("gui");
-		registerComponents(module);
+		layer =
+			assembly.layer("gui")
+			        .uses(layer);
+
+		module = layer.module("component");
+		assembleComponents(module);
+
+		module = layer.module("container");
+		assembleContainers(module);
 
 		return assembly;
 	}
 
-	protected Assembler registerComponentService(ModuleAssembly module)
+	protected Assembler assembleComponentService(ModuleAssembly module)
 	{
 		module.values(GridPresets.class)
 		      .visibleIn(Visibility.application);
@@ -65,21 +74,28 @@ public class Assembler implements ApplicationAssembler
 		return this;
 	}
 
-	protected Assembler registerComponents(ModuleAssembly module) throws AssemblyException
+	protected Assembler assembleComponents(ModuleAssembly module) throws AssemblyException
+	{
+		module.objects(Button.class,
+		               Desktop.class,
+		               InputField.class,
+		               LogPane.class,
+		               TracePane.class)
+		      .visibleIn(Visibility.application);
+
+		return this;
+	}
+
+	protected Assembler assembleContainers(ModuleAssembly module) throws AssemblyException
 	{
 		module.objects(AboutDialog.class,
 		               Alert.class,
-		               Button.class,
-		               InputField.class,
 		               InputPrompt.class,
-		               LogPane.class,
 		               MainFrame.class,
 		               MenuBar.class,
 		               Session.class,
-		               SessionManager.class,
 		               StatusBar.class,
 		               ToolBar.class,
-		               TracePane.class,
 		               TraceStatusBar.class,
 		               TraceToolBar.class)
 		      .visibleIn(Visibility.application);
@@ -87,7 +103,7 @@ public class Assembler implements ApplicationAssembler
 		return this;
 	}
 
-	protected Assembler registerCoreObjects(ModuleAssembly module) throws AssemblyException
+	protected Assembler assembleCoreObjects(ModuleAssembly module) throws AssemblyException
 	{
 		module.objects(ApplicationCore.class,
 		               GenericUncaughtExceptionHandler.class)
@@ -96,7 +112,7 @@ public class Assembler implements ApplicationAssembler
 		return this;
 	}
 
-	protected Assembler registerDictionaryService(ModuleAssembly module)
+	protected Assembler assembleDictionaryService(ModuleAssembly module)
 	{
 		module.values(Token.class)
 		      .visibleIn(Visibility.application);
@@ -112,7 +128,7 @@ public class Assembler implements ApplicationAssembler
 		return this;
 	}
 
-	protected Assembler registerLoggerService(ModuleAssembly module)
+	protected Assembler assembleLoggerService(ModuleAssembly module)
 	{
 		module.services(LoggerService.class)
 		      .identifiedBy("Logger Service")
@@ -122,7 +138,7 @@ public class Assembler implements ApplicationAssembler
 		return this;
 	}
 
-	protected Assembler registerRegistryService(ModuleAssembly module)
+	protected Assembler assembleRegistryService(ModuleAssembly module)
 	{
 		module.services(RegistryService.class)
 		      .identifiedBy("Registry Service")
@@ -132,7 +148,7 @@ public class Assembler implements ApplicationAssembler
 		return this;
 	}
 
-	protected Assembler registerUtilityService(ModuleAssembly module)
+	protected Assembler assembleUtilityService(ModuleAssembly module)
 	{
 		module.services(UtilityService.class)
 		      .identifiedBy("Utility Service")

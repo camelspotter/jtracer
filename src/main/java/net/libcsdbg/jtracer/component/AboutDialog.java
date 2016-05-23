@@ -10,7 +10,6 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import java.awt.*;
-import java.io.File;
 import java.net.URL;
 
 public class AboutDialog extends JDialog implements AutoInjectable,
@@ -38,14 +37,23 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 	{
 		super(owner, true);
 		selfInject();
-		setTitle("About " + registrySvc.get("full-name"));
+
+		String param = registrySvc.get("full-name");
+		if (param == null) {
+			param = MainFrame.Config.name;
+		}
+
+		param = param.trim();
+		setTitle("About " + param);
 
 		try {
-			File page = utilitySvc.getResource(Config.page);
-			JEditorPane viewer = new JEditorPane(page.toURI().toURL());
+			JTextPane viewer = new JTextPane();
 
-			viewer.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, true);
 			viewer.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);
+			viewer.putClientProperty(JEditorPane.W3C_LENGTH_UNITS, true);
+			viewer.setPage(utilitySvc.getResource(Config.page)
+			                         .toURI()
+			                         .toURL());
 
 			viewer.setEditable(false);
 			viewer.setFocusable(false);
@@ -100,6 +108,6 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 
 		public static Insets preferredMargin = new Insets(0, 0, 0, 0);
 
-		public static Dimension preferredSize = new Dimension(430, 410);
+		public static Dimension preferredSize = new Dimension(370, 470);
 	}
 }

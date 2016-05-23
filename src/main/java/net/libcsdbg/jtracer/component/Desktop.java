@@ -1,5 +1,6 @@
 package net.libcsdbg.jtracer.component;
 
+import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.core.ApplicationCore;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
@@ -16,10 +17,12 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SessionManager extends Component implements WindowListener,
-                                                         AutoInjectable
+public class Desktop extends Component implements AutoInjectable,
+                                                  WindowListener
 {
 	private static final long serialVersionUID = -560110208869609605L;
+
+	protected static GridPresets gridPresets;
 
 
 	@Service
@@ -36,20 +39,19 @@ public class SessionManager extends Component implements WindowListener,
 	protected final List<Session> sessions;
 
 
-	public SessionManager()
+	private Desktop()
 	{
-		super();
-		selfInject();
-
-		current = -1;
-		owner = null;
 		sessions = null;
 	}
 
-	public SessionManager(JFrame parent)
+	public Desktop(JFrame parent)
 	{
 		super();
 		selfInject();
+
+		if (gridPresets == null) {
+			gridPresets = componentSvc.getGridPresets("desktop");
+		}
 
 		current = -1;
 		owner = parent;
@@ -59,22 +61,75 @@ public class SessionManager extends Component implements WindowListener,
 		addPropertyChangeListener("currentSession", (PropertyChangeListener) owner);
 	}
 
-	public SessionManager cascade()
+	public Desktop alignSession(Integer index)
 	{
-		for (int i = 0, size = sessions.size(); i < size; i++) {
-			setClientPosition(i);
+		if (index < 0 || index >= sessions.size()) {
+			return this;
+		}
+
+		int rowSize = gridPresets.rowSize().get();
+		int row = (index + rowSize) / rowSize;
+		int column = index % rowSize;
+
+		int step = gridPresets.step().get();
+		int x = gridPresets.baseX().get() + step * column;
+		int y = gridPresets.baseY().get() + step * (row + column);
+
+		sessions.get(index)
+		        .setLocation(x, y);
+
+		return this;
+	}
+
+	public Desktop cascade()
+	{
+		for (int i = sessions.size() - 1; i >= 0; i--) {
+			alignSession(i);
 		}
 
 		return this;
 	}
 
-	public SessionManager disposeAll()
+	public Session closeCurrentSession()
+	{
+		int size = sessions.size();
+		if (current < 0 || current >= size) {
+			return null;
+		}
+
+		Session retval =
+			sessions.remove(current.intValue())
+			        .quit();
+
+		retval.setVisible(false);
+		firePropertyChange("sessionCount", null, --size);
+
+		if (size == 0) {
+			current = -1;
+			return retval;
+		}
+		else if (current == size) {
+			current--;
+		}
+
+		Session selected = sessions.get(current);
+		if (selected.isIconified()) {
+			shiftSessionSelection(false);
+		}
+		else {
+			selected.toFront();
+		}
+
+		return retval;
+	}
+
+	public Desktop disposeAll()
 	{
 		while (sessions.size() > 0) {
-			Session first = sessions.remove(0);
-			first.removeWindowListener(this);
-			first.quit()
-			     .dispose();
+			Session s = sessions.remove(0);
+			s.removeWindowListener(this);
+			s.quit()
+			 .dispose();
 		}
 
 		current = -1;
@@ -83,17 +138,32 @@ public class SessionManager extends Component implements WindowListener,
 		return this;
 	}
 
-	public SessionManager disposeCurrent()
+	public Session disposeCurrent()
 	{
-		if (current >= 0) {
-			sessions.get(current)
-			        .dispose();
-		}
-
-		return this;
+		return disposeSession(current);
 	}
 
-	public Integer getCurrent()
+	public Session disposeSession(Integer index)
+	{
+		Session retval = null;
+		if (index >= 0 && index < sessions.size()) {
+			retval = sessions.get(index);
+			retval.dispose();
+		}
+
+		return retval;
+	}
+
+	public Session getCurrent()
+	{
+		if (current >= 0 && current < sessions.size()) {
+			return sessions.get(current);
+		}
+
+		return null;
+	}
+
+	public Integer getCurrentIndex()
 	{
 		return current;
 	}
@@ -111,35 +181,36 @@ public class SessionManager extends Component implements WindowListener,
 	public Integer getTraceCount()
 	{
 		int count = 0;
-		for (Session session : sessions) {
-			count += session.getTraceCount();
+		for (Session s : sessions) {
+			count += s.getTraceCount();
 		}
 
 		return count;
 	}
 
-	public SessionManager register(Socket sock)
+	@Factory(Factory.Type.POJO)
+	public synchronized Session registerPeer(Socket peer)
 	{
-		Session session = new Session(owner, sock);
-		session.addWindowListener(this);
+		Session retval = new Session(owner, this, peer);
+		retval.addWindowListener(this);
 
-		sessions.add(session);
+		sessions.add(retval);
 		current = sessions.size() - 1;
 
-		setClientPosition(current);
-		session.setVisible(true);
-		session.toFront();
-		session.setAlwaysOnTop(owner.isAlwaysOnTop());
+		alignSession(current);
+		retval.setVisible(true);
+		retval.toFront();
+		retval.setAlwaysOnTop(owner.isAlwaysOnTop());
 
-		return this;
+		return retval;
 	}
 
-	public SessionManager setAlwaysOnTop(Integer index, Boolean alwaysOnTop)
+	public Desktop setAlwaysOnTop(Integer index, Boolean alwaysOnTop)
 	{
 		int size = sessions.size();
 		if (index < 0) {
-			for (index = 0; index < size; index++) {
-				sessions.get(index)
+			while (--size >= 0) {
+				sessions.get(size)
 				        .setAlwaysOnTop(alwaysOnTop);
 			}
 
@@ -154,63 +225,40 @@ public class SessionManager extends Component implements WindowListener,
 		return this;
 	}
 
-	public SessionManager setClientPosition(Integer index)
+	public Desktop setCurrent(Integer index)
 	{
-		if (index < 0) {
+		if (index < 0 || index >= sessions.size()) {
 			return this;
 		}
 
-		GridPresets presets = componentSvc.getGridPresets("desktop");
+		Session s = sessions.get(index);
+		s.setIconified(false);
+		s.toFront();
 
-		int rowSize = presets.rowSize().get();
-		int row = (index + rowSize) / rowSize;
-		int column = index % rowSize;
-
-		int step = presets.step().get();
-		int x = presets.baseX().get() + step * column;
-		int y = presets.baseY().get() + step * (row + column);
-
-		sessions.get(index)
-		        .setLocation(x, y);
-
+		current = index;
 		return this;
 	}
 
-	public SessionManager setCurrent(Integer selected)
-	{
-		if (selected < 0 || selected >= sessions.size()) {
-			return this;
-		}
-
-		Session session = sessions.get(selected);
-		session.setIconified(false);
-		session.toFront();
-
-		current = selected;
-		return this;
-	}
-
-	public SessionManager setIconified(final Boolean iconified)
+	@SuppressWarnings("all")
+	public Desktop setIconified(final Boolean iconified)
 	{
 		/* Defer execution to another thread */
 		Runnable worker = () -> {
-			synchronized (sessions) {
-				int previous = current;
-				for (Session session : sessions) {
-					session.setIconified(iconified);
+			int previous = current;
+			for (Session session : sessions) {
+				session.setIconified(iconified);
 
-					try {
-						Thread.sleep(Config.iconificationDelay);
-					}
-					catch (InterruptedException ignored) {
-					}
+				try {
+					Thread.sleep(Config.iconificationDelay);
 				}
+				catch (InterruptedException ignored) {
+				}
+			}
 
-				/* When a window is restored, it's activated by the OS window manager */
-				if (!iconified && previous >= 0) {
-					sessions.get(previous)
-					        .toFront();
-				}
+			/* When a window is restored, it's activated by the OS window manager */
+			if (!iconified && previous >= 0) {
+				sessions.get(previous)
+				        .toFront();
 			}
 		};
 
@@ -219,17 +267,22 @@ public class SessionManager extends Component implements WindowListener,
 			      .getThreadGroup();
 
 		Thread runner = new Thread(group, worker, Config.iconificationWorkerName);
+		runner.setDaemon(true);
 		runner.setUncaughtExceptionHandler(ApplicationCore.getCurrentApplicationCore()
 		                                                  .getUncaughtExceptionHandler());
-		runner.start();
 
+		runner.start();
 		return this;
 	}
 
-	public SessionManager shiftSelection(Integer step)
+	public Desktop shiftSessionSelection(Boolean ascending)
 	{
-		/* Quantize step */
-		step = (step < 0) ? -1 : 1;
+		int step = (ascending) ? -1 : 1;
+		int size = sessions.size();
+		if (size == 0) {
+			return this;
+		}
+
 		Session previous = sessions.get(current);
 		Session selected;
 
@@ -237,9 +290,9 @@ public class SessionManager extends Component implements WindowListener,
 		do {
 			current += step;
 			if (current < 0) {
-				current = sessions.size() - 1;
+				current = size - 1;
 			}
-			else if (current > sessions.size() - 1) {
+			else if (current > size - 1) {
 				current = 0;
 			}
 
@@ -261,15 +314,13 @@ public class SessionManager extends Component implements WindowListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		JFrame source = (JFrame) event.getWindow();
+		Window source = event.getWindow();
 		if (source.equals(owner)) {
 			return;
 		}
 
-		for (int i = 0, size = sessions.size(); i < size; i++) {
-			Session session = sessions.get(i);
-
-			if (session.equals(source)) {
+		for (int i = sessions.size() - 1; i >= 0; i--) {
+			if (sessions.get(i).equals(source)) {
 				current = i;
 				firePropertyChange("currentSession", null, current);
 				break;
@@ -282,31 +333,8 @@ public class SessionManager extends Component implements WindowListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		JFrame source = (JFrame) event.getWindow();
-		if (source.equals(owner)) {
-			return;
-		}
-
-		Session session = sessions.remove(current.intValue());
-		session.quit();
-
-		int size = sessions.size();
-		firePropertyChange("sessionCount", null, size);
-
-		if (size == 0) {
-			current = -1;
-			return;
-		}
-		else if (current == size) {
-			current--;
-		}
-
-		session = sessions.get(current);
-		if (session.isIconified()) {
-			shiftSelection(1);
-		}
-		else {
-			session.toFront();
+		if (!event.getWindow().equals(owner)) {
+			closeCurrentSession();
 		}
 	}
 
@@ -315,10 +343,8 @@ public class SessionManager extends Component implements WindowListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		JFrame source = (JFrame) event.getWindow();
-		if (!source.equals(owner) && current >= 0 && current < sessions.size()) {
-			sessions.get(current)
-			        .dispose();
+		if (!event.getWindow().equals(owner)) {
+			closeCurrentSession();
 		}
 	}
 
@@ -333,8 +359,7 @@ public class SessionManager extends Component implements WindowListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		JFrame source = (JFrame) event.getWindow();
-		if (source.equals(owner)) {
+		if (event.getWindow().equals(owner)) {
 			setIconified(false);
 		}
 	}
@@ -344,8 +369,7 @@ public class SessionManager extends Component implements WindowListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		JFrame source = (JFrame) event.getWindow();
-		if (source.equals(owner)) {
+		if (event.getWindow().equals(owner)) {
 			setIconified(true);
 		}
 	}
@@ -355,8 +379,7 @@ public class SessionManager extends Component implements WindowListener,
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		JFrame source = (JFrame) event.getWindow();
-		if (!source.equals(owner)) {
+		if (!event.getWindow().equals(owner)) {
 			firePropertyChange("sessionCount", null, sessions.size());
 		}
 	}

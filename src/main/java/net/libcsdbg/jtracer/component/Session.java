@@ -1,6 +1,7 @@
 package net.libcsdbg.jtracer.component;
 
 import net.libcsdbg.jtracer.annotation.Note;
+import net.libcsdbg.jtracer.core.ApplicationCore;
 import net.libcsdbg.jtracer.core.AutoInjectable;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
@@ -18,7 +19,6 @@ import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
 import java.net.ProtocolException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Map;
 
 public class Session extends JFrame implements ActionListener,
+                                               AutoInjectable,
                                                ChangeListener,
-                                               Runnable,
-                                               AutoInjectable
+                                               Runnable
 {
 	private static final long serialVersionUID = 535946441402056043L;
 
@@ -47,7 +47,11 @@ public class Session extends JFrame implements ActionListener,
 	protected UtilityService utilitySvc;
 
 
+	protected Desktop desktop;
+
 	protected JFrame owner;
+
+	protected InputPrompt searchPrompt;
 
 	protected TraceStatusBar status;
 
@@ -69,25 +73,27 @@ public class Session extends JFrame implements ActionListener,
 	protected Thread server;
 
 
-	public Session()
+	private Session()
 	{
-		this(null, null);
 	}
 
-	public Session(JFrame owner, Socket connection)
+	public Session(JFrame owner, Desktop desktop, Socket connection)
 	{
 		super(Config.initialTitle);
 		selfInject();
+		setIconImages(utilitySvc.getProjectIcons());
+		setSize(componentSvc.getDimension("trace"));
 
+		this.desktop = desktop;
 		this.owner = owner;
 		this.connection = connection;
-		active = locked = false;
-		traces = new ArrayList<>();
+		this.active = false;
+		this.locked = false;
+		this.traces = new ArrayList<>();
 
 		/* Setup the UI */
-		status = new TraceStatusBar();
-		status.setAddress(connection.getInetAddress().getCanonicalHostName(), connection.getPort());
-		add(status, BorderLayout.SOUTH);
+		tools = new TraceToolBar(this, (ActionListener) owner);
+		add(tools, BorderLayout.NORTH);
 
 		tabs = new JTabbedPane();
 		tabs.setFont(componentSvc.getFont("component"));
@@ -95,11 +101,9 @@ public class Session extends JFrame implements ActionListener,
 		tabs.addChangeListener(this);
 		add(tabs, BorderLayout.CENTER);
 
-		tools = new TraceToolBar(this, (ActionListener) owner);
-		add(tools, BorderLayout.NORTH);
-
-		setIconImages(utilitySvc.getProjectIcons());
-		setSize(componentSvc.getDimension("trace"));
+		status = new TraceStatusBar();
+		status.setAddress(connection.getInetAddress().getCanonicalHostName(), connection.getPort());
+		add(status, BorderLayout.SOUTH);
 
 		/* Setup (and fire initial) property change events */
 		addPropertyChangeListener("sessionRequest", (PropertyChangeListener) owner);
@@ -116,9 +120,9 @@ public class Session extends JFrame implements ActionListener,
 		try {
 			connection.shutdownOutput();
 
-			String param = registrySvc.get("network-io-timeout");
+			String param = registrySvc.get("keep-alive-timeout");
 			if (param != null) {
-				connection.setSoTimeout(Integer.parseInt(param));
+				connection.setSoTimeout(Integer.parseInt(param.trim()));
 			}
 
 			socketReader = new InputStreamReader(connection.getInputStream());
@@ -148,10 +152,16 @@ public class Session extends JFrame implements ActionListener,
 		}
 
 		/* Start service thread */
-		ThreadGroup group = Thread.currentThread().getThreadGroup();
-		server = new Thread(group, this, Config.serviceThreadName);
-		server.start();
+		ThreadGroup group =
+			Thread.currentThread()
+			      .getThreadGroup();
 
+		server = new Thread(group, this, Config.serviceThreadName);
+		server.setDaemon(true);
+		server.setUncaughtExceptionHandler(ApplicationCore.getCurrentApplicationCore()
+		                                                  .getUncaughtExceptionHandler());
+
+		server.start();
 		synchronized (this) {
 			while (!active) {
 				try {
@@ -195,12 +205,28 @@ public class Session extends JFrame implements ActionListener,
 		}
 
 		else if (cmd.equals("Lock")) {
+			if (locked && tabs.getTabCount() == 0) {
+				owner.toFront();
+				desktop.closeCurrentSession();
+				return;
+			}
+
 			locked = !locked;
 			firePropertyChange("isLocked", null, locked);
 		}
 
 		else if (cmd.equals("Find")) {
-			Alert.error(this, "Not implemented yet", false);
+			if (searchPrompt == null) {
+				searchPrompt = new InputPrompt(this, "Text to find:");
+			}
+
+			searchPrompt.setLocationRelativeTo(this);
+			searchPrompt.setVisible(true);
+
+			String text = searchPrompt.getInput();
+			if (text != null && (text = text.trim()).length() > 0) {
+				loggerSvc.debug(getClass(), "Searched text -> " + text);
+			}
 		}
 	}
 
@@ -208,8 +234,6 @@ public class Session extends JFrame implements ActionListener,
 	public Session addTrace(Map<String, String> request)
 	{
 		TracePane pane = new TracePane(request);
-		pane.append(request.get("trace"));
-		pane.setMargin(componentSvc.getInsets("trace"));
 		traces.add(pane);
 
 		/* Setup the trace tab viewport */
@@ -221,8 +245,6 @@ public class Session extends JFrame implements ActionListener,
 		tabs.addTab("Thread " + request.get("tid").toLowerCase(), utilitySvc.loadIcon("new.png"), viewport);
 
 		/* Set status bar fields */
-		status.setTimestamp(Long.parseLong(request.get("tstamp"), 16));
-
 		String header = request.get("exception");
 		if (header != null) {
 			status.setMessage(header);
@@ -231,15 +253,16 @@ public class Session extends JFrame implements ActionListener,
 			status.setMessage(Config.defaultStatusMessage);
 		}
 
-		InetAddress address = connection.getInetAddress();
+		status.setTimestamp(Long.parseLong(request.get("tstamp"), 16));
+
+		String address = connection.getInetAddress().getCanonicalHostName();
 		int port = connection.getPort();
-		status.setAddress(address.getCanonicalHostName(), port);
+		status.setAddress(address, port);
 
 		/* Customize session frame title */
-		String ip = address.getHostAddress();
 		String path = request.get("path");
-		String pid = request.get("pid");
-		setTitle(path + " (" + pid + "@" + ip + ")");
+		int pid = Integer.parseInt(request.get("pid"), 16);
+		setTitle(path + " (" + pid + "@" + address + ")");
 
 		/* Logged message */
 		StringBuilder message = new StringBuilder(Config.preallocSize);
@@ -252,7 +275,7 @@ public class Session extends JFrame implements ActionListener,
 		       .append(pid)
 		       .append("@")
 
-		       .append(ip)
+		       .append(address)
 		       .append(":")
 		       .append(port)
 		       .append(")");
@@ -266,7 +289,7 @@ public class Session extends JFrame implements ActionListener,
 	}
 
 	@Note("Protocol implementation")
-	public Map<String, String> getRequest() throws IOException
+	public final Map<String, String> getRequest() throws IOException
 	{
 		Map<String, String> retval = new HashMap<>(Config.requestPreallocSize);
 
@@ -278,11 +301,14 @@ public class Session extends JFrame implements ActionListener,
 		StringBuilder trace = new StringBuilder(Config.preallocSize);
 		do {
 			String line = receiver.readLine();
+
+			/* The peer disconnected the keep-alive socket */
 			if (line == null) {
 				if (count != 0) {
 					throw new IOException("The peer disconnected prematurely");
 				}
 
+				/* No more session traces */
 				return null;
 			}
 
@@ -302,18 +328,18 @@ public class Session extends JFrame implements ActionListener,
 				continue;
 			}
 
-			int mark = line.indexOf(":");
+			int mark = line.indexOf(':');
 			if (mark <= 0) {
-				throw new ProtocolException("LDP request format error (" + count + ": " + line + ")");
+				throw new ProtocolException("LDP request format error (line " + count + ": " + line + ")");
 			}
 
 			String header = line.substring(0, mark).trim();
-			String field = line.substring(mark + 1).trim();
-			if (header.length() == 0 || field.length() == 0) {
-				throw new ProtocolException("LDP request format error (" + count + ": " + line + ")");
+			String value = line.substring(mark + 1).trim();
+			if (header.length() == 0 || value.length() == 0) {
+				throw new ProtocolException("LDP request format error (line " + count + ": " + line + ")");
 			}
 
-			retval.put(header, field);
+			retval.put(header, value);
 		}
 		while (!buffer.toString().endsWith("}\n\n"));
 
@@ -339,17 +365,20 @@ public class Session extends JFrame implements ActionListener,
 			if (receiver != null) {
 				receiver.close();
 			}
-
-			if (connection != null) {
-				connection.close();
-			}
-
-			receiver = null;
-			connection = null;
 		}
 		catch (Throwable ignored) {
 		}
 
+		try {
+			if (connection != null) {
+				connection.close();
+			}
+		}
+		catch (Throwable ignored) {
+		}
+
+		receiver = null;
+		connection = null;
 		return this;
 	}
 
@@ -366,7 +395,7 @@ public class Session extends JFrame implements ActionListener,
 			try {
 				Map<String, String> request = getRequest();
 
-				/* Indication the peer keep-alive socket has closed, session goes inactive */
+				/* The peer keep-alive socket has closed, session goes inactive */
 				if (request == null) {
 					quit();
 					server = null;
@@ -458,9 +487,9 @@ public class Session extends JFrame implements ActionListener,
 		public static Integer requestPreallocSize = 16;
 
 
-		public static String initialTitle = "Session";
-
 		public static String defaultStatusMessage = "Thread stack trace";
+
+		public static String initialTitle = "Session";
 
 		public static String serviceThreadName = "LDP Service Thread";
 

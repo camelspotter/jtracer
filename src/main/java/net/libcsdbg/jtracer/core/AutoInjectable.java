@@ -16,34 +16,34 @@ public interface AutoInjectable
 
 	public default Layer layer()
 	{
-		ModuleDetailDescriptor module =
+		String name =
 			ApplicationCore.getCurrentApplicationCore()
 			               .getArchitecture()
-			               .findModule(this);
+			               .findModule(this)
+			               .layer()
+			               .descriptor()
+			               .name();
 
-		String layerName =
-			module.layer()
-			      .descriptor()
-			      .name();
-
-		return application().findLayer(layerName);
+		return application().findLayer(name);
 	}
 
 	public default Module module()
 	{
-		ModuleDetailDescriptor module =
+		ModuleDetailDescriptor container =
 			ApplicationCore.getCurrentApplicationCore()
 			               .getArchitecture()
 			               .findModule(this);
 
-		String moduleName = module.descriptor().name();
+		String module =
+			container.descriptor()
+			         .name();
 
-		String layerName =
-			module.layer()
-			      .descriptor()
-			      .name();
+		String layer =
+			container.layer()
+			         .descriptor()
+			         .name();
 
-		return application().findModule(layerName, moduleName);
+		return application().findModule(layer, module);
 	}
 
 	public default AutoInjectable selfInject(Object... injected)
