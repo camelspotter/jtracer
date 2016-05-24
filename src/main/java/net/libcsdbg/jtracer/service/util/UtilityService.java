@@ -20,8 +20,8 @@ import java.util.List;
 
 @Mixins(UtilityService.Mixin.class)
 @Activators(UtilityService.Activator.class)
-public interface UtilityService extends UtilityServiceApi,
-                                        ServiceComposite
+public interface UtilityService extends ServiceComposite,
+                                        UtilityServiceApi
 {
 	public abstract class Mixin implements UtilityService
 	{
@@ -163,24 +163,21 @@ public interface UtilityService extends UtilityServiceApi,
 		@Override
 		public ImageIcon loadIcon(String name)
 		{
-			try {
-				String iconPath = registrySvc.get("theme");
-				if (iconPath == null) {
-					iconPath = "theme/default/icons/";
-				}
-				else {
-					iconPath = "theme/" + iconPath.trim() + "/icons/";
-				}
+			StringBuilder path = new StringBuilder("theme/");
 
-				iconPath = getResource(iconPath + name).getCanonicalPath();
-				return new ImageIcon(iconPath);
+			String theme = registrySvc.get("theme");
+			if (theme == null) {
+				path.append("default/");
 			}
-			catch (RuntimeException err) {
-				throw err;
+			else {
+				path.append(theme.trim())
+				    .append("/");
 			}
-			catch (Throwable err) {
-				throw new RuntimeException(err);
-			}
+
+			path.append("icons/")
+			    .append(name);
+
+			return new ImageIcon(getResource(path.toString()).getAbsolutePath());
 		}
 
 		@Override

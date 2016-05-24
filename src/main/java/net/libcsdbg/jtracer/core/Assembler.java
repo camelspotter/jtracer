@@ -77,6 +77,7 @@ public class Assembler implements ApplicationAssembler
 	protected Assembler assembleComponents(ModuleAssembly module) throws AssemblyException
 	{
 		module.objects(Button.class,
+		               Checkbox.class,
 		               Desktop.class,
 		               InputField.class,
 		               LogPane.class,

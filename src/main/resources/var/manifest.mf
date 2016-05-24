@@ -1,8 +1,0 @@
-Name: ${name}
-Manifest-Version: 1.0
-Implementation-Version: ${project.version}
-Implementation-Title: ${name} ${project.description}
-Implementation-Vendor: ${project.author}
-Main-Class: ${project.entryPoint}
-Sealed: true
-SplashScreen-Image: ${splash}

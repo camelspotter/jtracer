@@ -37,6 +37,8 @@ public interface Tokenizer extends TokenizerState,
 
 	Type resolveTokenType(@NotEmpty String tokenText, @Optional String delimiter);
 
+	Token tokenOf(@NotEmpty String text, @Optional String delimiter);
+
 	Token tokenOf(@NotEmpty String text, @Optional String delimiter, Type type);
 
 
@@ -81,11 +83,13 @@ public interface Tokenizer extends TokenizerState,
 				return null;
 			}
 
-			String delimiter = matcher.group();
-			String tokenText = input().get().substring(offset, matcher.start());
+			String tokenText =
+				input().get()
+				       .substring(offset, matcher.start());
+
 			offset = matcher.end();
 
-			return tokenOf(tokenText, delimiter, resolveTokenType(tokenText, delimiter));
+			return tokenOf(tokenText, matcher.group());
 		}
 
 		@Override
@@ -115,8 +119,7 @@ public interface Tokenizer extends TokenizerState,
 				return null;
 			}
 
-			String tokenText = input().get().substring(offset);
-			return tokenOf(tokenText, null, resolveTokenType(tokenText, null));
+			return tokenOf(input().get().substring(offset), null);
 		}
 
 		@Override
@@ -165,6 +168,13 @@ public interface Tokenizer extends TokenizerState,
 			}
 
 			return Type.plain;
+		}
+
+		@Factory(Factory.Type.COMPOSITE_VALUE)
+		@Override
+		public Token tokenOf(@NotEmpty String text, @Optional String delimiter)
+		{
+			return tokenOf(text, delimiter, resolveTokenType(text, delimiter));
 		}
 
 		@Factory(Factory.Type.COMPOSITE_VALUE)

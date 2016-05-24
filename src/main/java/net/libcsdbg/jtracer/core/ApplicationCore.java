@@ -115,6 +115,7 @@ public class ApplicationCore implements AutoInjectable,
 					.obtainGlobalLock()
 					.launchGui();
 
+			/* In sync with windowClosed. The main thread waits until the GUI is closed */
 			synchronized (core) {
 				while (core.gui != null) {
 					try {
@@ -382,9 +383,10 @@ public class ApplicationCore implements AutoInjectable,
 
 	public static class Config
 	{
+		public static Integer exitFailure = 1;
+
 		public static Integer exitSuccess = 0;
 
-		public static Integer exitFailure = 1;
 
 		public static String farewell = "Application complete";
 

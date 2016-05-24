@@ -124,9 +124,11 @@ public class MenuBar extends JMenuBar implements ActionListener,
 		menu.setMnemonic(VK_H);
 
 		menu.add(createItem("Online documentation", VK_D, 0));
+		menu.add(createItem("Check for updates", VK_U, 0));
+		menu.addSeparator();
 		menu.add(createItem("Bug tracker", VK_B, 0));
 		menu.add(createItem("Submit feedback", VK_F, 0));
-		menu.add(createItem("Check for updates", VK_U, 0));
+		menu.add(createItem("Join forum", VK_O, 0));
 		menu.addSeparator();
 
 		String param = registrySvc.get("full-name");

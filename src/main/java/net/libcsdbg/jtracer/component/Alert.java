@@ -110,7 +110,7 @@ public class Alert extends JDialog implements ActionListener,
 			center.add(l);
 
 			if (i == 0) {
-				bagConstraints.insets.top = componentSvc.getLineSpacing("alert");
+				bagConstraints.insets.top = componentSvc.getLineSpacing("alert").intValue();
 			}
 		}
 

@@ -33,7 +33,7 @@ public interface ComponentServiceApi extends ComponentServiceState
 
 	Insets getInsets(@WidgetDescriptor String widget);
 
-	Integer getLineSpacing(@WidgetDescriptor String widget);
+	Float getLineSpacing(@WidgetDescriptor String widget);
 
 	Locale getLocale(@WidgetDescriptor String widget);
 

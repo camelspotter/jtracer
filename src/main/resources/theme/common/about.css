@@ -8,20 +8,29 @@ body, table, p {
     padding: 0;
 }
 
+div {
+    padding: 40px 10px 0 10px;
+}
+
 td.icon {
     padding: 14px 0 0 14px;
 }
 
+td.img {
+    padding: 0 14px 0 0;
+}
+
 p.h1 {
-    padding: 10px 8px 0 20px;
     font-size: 140%;
     font-weight: bold;
+    padding: 10px 8px 0 20px;
 }
 
 p.h2 {
-    padding: 8px 8px 0 20px;
-    font-size: 105%;
     color: #86b6d7;
+    font-size: 105%;
+    font-style: italic;
+    padding: 10px 8px 0 20px;
 }
 
 p.text {
@@ -44,6 +53,6 @@ a {
 }
 
 a.close {
-    padding: 40px 0 0 0;
     color: #86b6d7;
+    padding: 40px 0 0 0;
 }

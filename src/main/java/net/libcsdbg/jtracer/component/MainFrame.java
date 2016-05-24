@@ -259,7 +259,8 @@ public class MainFrame extends JFrame implements ActionListener,
 		/* Help menu commands */
 		else if (cmd.equals("Online documentation") ||
 		         cmd.equals("Bug tracker") ||
-		         cmd.equals("Submit feedback")) {
+		         cmd.equals("Submit feedback") ||
+		         cmd.equals("Join forum")) {
 			String key = "url-" + cmd.toLowerCase().replace(' ', '-');
 			String url = registrySvc.get(key);
 

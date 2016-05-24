@@ -63,7 +63,7 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 			viewer.addHyperlinkListener(this);
 			add(viewer, BorderLayout.CENTER);
 
-			setResizable(false);
+			//setResizable(false);
 			setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 			pack();
 		}
@@ -108,6 +108,6 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 
 		public static Insets preferredMargin = new Insets(0, 0, 0, 0);
 
-		public static Dimension preferredSize = new Dimension(370, 470);
+		public static Dimension preferredSize = new Dimension(370, 560);
 	}
 }

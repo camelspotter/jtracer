@@ -144,7 +144,9 @@ public interface ComponentService extends ComponentServiceApi,
 
 			int retval = 0;
 			for (String style : param.split(",")) {
-				style = style.trim().toLowerCase();
+				style =
+					style.trim()
+					     .toLowerCase();
 
 				switch (style) {
 				case "plain":
@@ -246,7 +248,7 @@ public interface ComponentService extends ComponentServiceApi,
 
 		@Factory(Factory.Type.POJO)
 		@Override
-		public Integer getLineSpacing(@WidgetDescriptor String widget)
+		public Float getLineSpacing(@WidgetDescriptor String widget)
 		{
 			String key = widget + "-line-spacing";
 			String param = registrySvc.get(key);
@@ -254,7 +256,7 @@ public interface ComponentService extends ComponentServiceApi,
 				throw new RuntimeException("No configuration found for key '" + key + "'");
 			}
 
-			return Integer.parseInt(param.trim());
+			return Float.parseFloat(param.trim());
 		}
 
 		@Factory(Factory.Type.POJO)

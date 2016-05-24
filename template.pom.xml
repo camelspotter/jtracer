@@ -38,6 +38,10 @@
                         </manifest>
                         <manifestEntries>
                             <Class-Path>lib/</Class-Path>
+                            <Implementation-Title>${name} ${project.description}</Implementation-Title>
+                            <Implementation-Vendor>${project.author}</Implementation-Vendor>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <SplashScreen-Image>${splash}</SplashScreen-Image>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -162,7 +166,7 @@
         <project.description>C/C++ Stack Trace Visualizer</project.description>
         <project.entryPoint>${groupId}.${artifactId}.core.ApplicationCore</project.entryPoint>
         <project.license>GNU General Public Licence v3</project.license>
-        <project.poweredBy>Zest @ Apache Software Foundation</project.poweredBy>
+        <project.poweredBy>Zest@Apache Software Foundation</project.poweredBy>
     </properties>
 
     <profiles>
