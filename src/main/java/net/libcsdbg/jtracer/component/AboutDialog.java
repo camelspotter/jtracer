@@ -63,7 +63,7 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 			viewer.addHyperlinkListener(this);
 			add(viewer, BorderLayout.CENTER);
 
-			//setResizable(false);
+			setResizable(false);
 			setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 			pack();
 		}

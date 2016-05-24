@@ -92,7 +92,9 @@ public class InputPrompt extends JDialog implements ActionListener,
 			center.add(l);
 
 			if (i == 0) {
-				bagConstraints.insets.top = componentSvc.getLineSpacing("alert").intValue();
+				bagConstraints.insets.top =
+					componentSvc.getLineSpacing("alert")
+					            .intValue();
 			}
 		}
 

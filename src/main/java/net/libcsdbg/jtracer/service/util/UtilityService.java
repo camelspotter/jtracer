@@ -166,7 +166,7 @@ public interface UtilityService extends ServiceComposite,
 			StringBuilder path = new StringBuilder("theme/");
 
 			String theme = registrySvc.get("theme");
-			if (theme == null) {
+			if (theme == null || theme.trim().length() == 0) {
 				path.append("default/");
 			}
 			else {
