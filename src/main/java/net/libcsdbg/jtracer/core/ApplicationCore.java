@@ -240,6 +240,7 @@ public class ApplicationCore implements AutoInjectable,
 	{
 		try {
 			UIManager.setLookAndFeel(properties.getProperty("lnf"));
+			Thread.sleep(Config.startupDelay);
 		}
 		catch (Throwable ignored) {
 		}
@@ -386,6 +387,8 @@ public class ApplicationCore implements AutoInjectable,
 		public static Integer exitFailure = 1;
 
 		public static Integer exitSuccess = 0;
+
+		public static Integer startupDelay = 2500;
 
 
 		public static String farewell = "Application complete";

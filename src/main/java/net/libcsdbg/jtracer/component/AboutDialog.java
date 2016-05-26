@@ -108,6 +108,6 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 
 		public static Insets preferredMargin = new Insets(0, 0, 0, 0);
 
-		public static Dimension preferredSize = new Dimension(370, 560);
+		public static Dimension preferredSize = new Dimension(380, 560);
 	}
 }

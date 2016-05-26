@@ -5,6 +5,11 @@ import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.PlainDocument;
+import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class InputField extends JTextField implements AutoInjectable
@@ -14,6 +19,9 @@ public class InputField extends JTextField implements AutoInjectable
 
 	@Service
 	protected ComponentService componentSvc;
+
+
+	protected String grammar;
 
 
 	public InputField()
@@ -42,6 +50,23 @@ public class InputField extends JTextField implements AutoInjectable
 		setProperties();
 	}
 
+	protected Document createDefaultModel()
+	{
+		return new RegularExpressionDocument(grammar);
+	}
+
+	public String getGrammar()
+	{
+		return grammar;
+	}
+
+	public InputField setGrammar(String grammar)
+	{
+		this.grammar = grammar;
+		setDocument(createDefaultModel());
+		return this;
+	}
+
 	protected InputField setProperties()
 	{
 		selfInject();
@@ -58,5 +83,42 @@ public class InputField extends JTextField implements AutoInjectable
 		setLocale(componentSvc.getLocale("input-field"));
 
 		return this;
+	}
+
+
+	public static class RegularExpressionDocument extends PlainDocument
+	{
+		private static final long serialVersionUID = 4719047964101045906L;
+
+
+		protected String grammar;
+
+
+		public RegularExpressionDocument(String grammar)
+		{
+			super();
+
+			if (grammar == null) {
+				this.grammar = "";
+			}
+			else {
+				this.grammar = grammar.trim();
+			}
+		}
+
+		@Override
+		public void insertString(int offset, String input, AttributeSet set) throws BadLocationException
+		{
+			if (input.length() == 0) {
+				return;
+			}
+
+			if (grammar.length() > 0 && !input.matches(grammar)) {
+				Toolkit.getDefaultToolkit().beep();
+				return;
+			}
+
+			super.insertString(offset, input, set);
+		}
 	}
 }
