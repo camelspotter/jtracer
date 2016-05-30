@@ -58,39 +58,21 @@ public interface ComponentService extends ComponentServiceApi,
 		@Override
 		public Color getBackgroundColor(String widget)
 		{
-			String key = widget + "-bgcolor";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			return Color.decode(param.trim());
+			return Color.decode(getProperty(widget + "-bgcolor"));
 		}
 
 		@Factory(Factory.Type.POJO)
 		@Override
-		public Color getCaretColor(@WidgetDescriptor String widget)
+		public Color getCaretColor(String widget)
 		{
-			String key = widget + "-caret-color";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			return Color.decode(param.trim());
+			return Color.decode(getProperty(widget + "-caret-color"));
 		}
 
 		@Factory(Factory.Type.POJO)
 		@Override
 		public Dimension getDimension(String widget)
 		{
-			String key = widget + "-size";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			String[] parts = param.split(",");
+			String[] parts = getProperty(widget + "-size").split(",");
 			List<Integer> axes =
 				Arrays.asList(parts)
 				      .stream()
@@ -112,38 +94,22 @@ public interface ComponentService extends ComponentServiceApi,
 		@Override
 		public String getFontName(String widget)
 		{
-			String key = widget + "-font";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			return param.trim();
+			return getProperty(widget + "-font");
 		}
 
 		@Override
 		public Integer getFontSize(String widget)
 		{
-			String key = widget + "-font-size";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			return Integer.parseInt(param.trim());
+			return Integer.parseInt(getProperty(widget + "-font-size"));
 		}
 
 		@Override
 		public Integer getFontStyles(String widget)
 		{
 			String key = widget + "-font-type";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
 
 			int retval = 0;
-			for (String style : param.split(",")) {
+			for (String style : getProperty(key).split(",")) {
 				style =
 					style.trim()
 					     .toLowerCase();
@@ -173,26 +139,14 @@ public interface ComponentService extends ComponentServiceApi,
 		@Override
 		public Color getForegroundColor(String widget)
 		{
-			String key = widget + "-fgcolor";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			return Color.decode(param.trim());
+			return Color.decode(getProperty(widget + "-fgcolor"));
 		}
 
 		@Factory(Factory.Type.COMPOSITE_VALUE)
 		@Override
 		public GridPresets getGridPresets(String widget)
 		{
-			String key = widget + "-grid-presets";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			String[] parts = param.split(",");
+			String[] parts = getProperty(widget + "-grid-presets").split(",");
 			List<Integer> offsets =
 				Arrays.asList(parts)
 				      .stream()
@@ -225,13 +179,7 @@ public interface ComponentService extends ComponentServiceApi,
 		@Override
 		public Insets getInsets(String widget)
 		{
-			String key = widget + "-insets";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			String[] parts = param.split(",");
+			String[] parts = getProperty(widget + "-insets").split(",");
 			List<Integer> margins =
 				Arrays.asList(parts)
 				      .stream()
@@ -246,30 +194,17 @@ public interface ComponentService extends ComponentServiceApi,
 				           margins.get(3));
 		}
 
-		@Factory(Factory.Type.POJO)
 		@Override
-		public Float getLineSpacing(@WidgetDescriptor String widget)
+		public Float getLineSpacing(String widget)
 		{
-			String key = widget + "-line-spacing";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			return Float.parseFloat(param.trim());
+			return Float.parseFloat(getProperty(widget + "-line-spacing"));
 		}
 
 		@Factory(Factory.Type.POJO)
 		@Override
-		public Locale getLocale(@WidgetDescriptor String widget)
+		public Locale getLocale(String widget)
 		{
-			String key = widget + "-locale";
-			String param = registrySvc.get(key);
-			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + key + "'");
-			}
-
-			param = param.trim();
+			String param = getProperty(widget + "-locale");
 			for (Locale l : Locale.getAvailableLocales()) {
 				if (param.equals(l.toLanguageTag())) {
 					return l;
@@ -279,15 +214,20 @@ public interface ComponentService extends ComponentServiceApi,
 			throw new RuntimeException("No locale found with language tag '" + param + "'");
 		}
 
-		@Override
-		public Boolean isEnabled(@WidgetDescriptor String graphicsOption)
+		protected String getProperty(@WidgetDescriptor String key)
 		{
-			String param = registrySvc.get(graphicsOption);
+			String param = registrySvc.get(key);
 			if (param == null) {
-				throw new RuntimeException("No configuration found for key '" + graphicsOption + "'");
+				throw new RuntimeException("No configuration found for key '" + key + "'");
 			}
 
-			param = param.trim().toLowerCase();
+			return param.trim();
+		}
+
+		@Override
+		public Boolean isEnabled(String graphicsOption)
+		{
+			String param = getProperty(graphicsOption).toLowerCase();
 			return
 				param.equals("true") ||
 				param.equals("yes") ||
@@ -310,7 +250,7 @@ public interface ComponentService extends ComponentServiceApi,
 	}
 
 
-	class Activator extends ActivatorAdapter<ServiceReference<ComponentService>>
+	public static class Activator extends ActivatorAdapter<ServiceReference<ComponentService>>
 	{
 		@Override
 		public void afterActivation(ServiceReference<ComponentService> svc) throws Exception

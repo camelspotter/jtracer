@@ -172,7 +172,7 @@ public interface Tokenizer extends TokenizerState,
 
 		@Factory(Factory.Type.COMPOSITE_VALUE)
 		@Override
-		public Token tokenOf(@NotEmpty String text, @Optional String delimiter)
+		public Token tokenOf(String text, String delimiter)
 		{
 			return tokenOf(text, delimiter, resolveTokenType(text, delimiter));
 		}

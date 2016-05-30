@@ -215,7 +215,7 @@ public interface RegistryService extends RegistryServiceApi,
 	}
 
 
-	class Activator extends ActivatorAdapter<ServiceReference<RegistryService>>
+	public static class Activator extends ActivatorAdapter<ServiceReference<RegistryService>>
 	{
 		@Override
 		public void afterActivation(ServiceReference<RegistryService> svc) throws Exception

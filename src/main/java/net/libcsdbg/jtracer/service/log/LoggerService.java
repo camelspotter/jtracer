@@ -238,7 +238,7 @@ public interface LoggerService extends LoggerServiceApi,
 	}
 
 
-	class Activator extends ActivatorAdapter<ServiceReference<LoggerService>>
+	public static class Activator extends ActivatorAdapter<ServiceReference<LoggerService>>
 	{
 		@Override
 		public void afterActivation(ServiceReference<LoggerService> svc) throws Exception

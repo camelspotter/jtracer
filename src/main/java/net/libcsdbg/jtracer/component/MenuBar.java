@@ -20,7 +20,7 @@ import java.beans.PropertyChangeListener;
 import java.util.List;
 
 import static java.awt.event.KeyEvent.*;
-import static net.libcsdbg.jtracer.component.MenuBar.MenuType.*;
+import static net.libcsdbg.jtracer.component.MenuBar.Type.*;
 
 @Note("All methods that alter the UI are called from within the Event Dispatching Thread")
 public class MenuBar extends JMenuBar implements ActionListener,
@@ -354,7 +354,7 @@ public class MenuBar extends JMenuBar implements ActionListener,
 	}
 
 
-	public static enum MenuType
+	public static enum Type
 	{
 		service,
 

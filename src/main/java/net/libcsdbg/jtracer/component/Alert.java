@@ -35,7 +35,7 @@ public class Alert extends JDialog implements ActionListener,
 	{
 	}
 
-	public Alert(JFrame owner, String message, AlertType type)
+	public Alert(JFrame owner, String message, Type type)
 	{
 		super(owner, true);
 		selfInject();
@@ -130,7 +130,7 @@ public class Alert extends JDialog implements ActionListener,
 
 	public static void error(JFrame owner, String message, Boolean isFatal)
 	{
-		new Alert(owner, message, AlertType.error);
+		new Alert(owner, message, Type.error);
 		if (isFatal) {
 			throw new RuntimeException(message);
 		}
@@ -138,12 +138,12 @@ public class Alert extends JDialog implements ActionListener,
 
 	public static void information(JFrame owner, String message)
 	{
-		new Alert(owner, message, AlertType.information);
+		new Alert(owner, message, Type.information);
 	}
 
 	public static Boolean prompt(JFrame owner, String message)
 	{
-		return new Alert(owner, message, AlertType.prompt).getReply();
+		return new Alert(owner, message, Type.prompt).getReply();
 	}
 
 	@Override
@@ -164,7 +164,7 @@ public class Alert extends JDialog implements ActionListener,
 	}
 
 
-	public static enum AlertType
+	public static enum Type
 	{
 		error,
 

@@ -2,6 +2,7 @@ package net.libcsdbg.jtracer.service.text;
 
 import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.Note;
+import net.libcsdbg.jtracer.annotation.constraint.Name;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.text.parse.Tokenizer;
 import net.libcsdbg.jtracer.service.util.UtilityService;
@@ -61,7 +62,7 @@ public interface DictionaryService extends DictionaryServiceApi,
 		}
 
 		@Factory(Factory.Type.POJO)
-		protected BufferedReader getDictionaryReader(String name) throws FileNotFoundException
+		protected BufferedReader getDictionaryReader(@Name String name) throws FileNotFoundException
 		{
 			File src = utilitySvc.getResource("dictionary/" + name + ".dict");
 
@@ -178,7 +179,7 @@ public interface DictionaryService extends DictionaryServiceApi,
 	}
 
 
-	class Activator extends ActivatorAdapter<ServiceReference<DictionaryService>>
+	public static class Activator extends ActivatorAdapter<ServiceReference<DictionaryService>>
 	{
 		@Override
 		public void afterActivation(ServiceReference<DictionaryService> svc) throws Exception

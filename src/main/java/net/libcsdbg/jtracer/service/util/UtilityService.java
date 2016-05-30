@@ -223,7 +223,7 @@ public interface UtilityService extends ServiceComposite,
 	}
 
 
-	class Activator extends ActivatorAdapter<ServiceReference<UtilityService>>
+	public static class Activator extends ActivatorAdapter<ServiceReference<UtilityService>>
 	{
 		@Override
 		public void afterActivation(ServiceReference<UtilityService> svc) throws Exception

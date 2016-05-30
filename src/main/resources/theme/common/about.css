@@ -9,28 +9,28 @@ body, table, p {
 }
 
 div {
-    padding: 40px 10px 0 10px;
+    padding: 36px 10px 0 10px;
 }
 
-td.icon {
-    padding: 14px 0 0 14px;
-}
-
-td.img {
-    padding: 0 14px 0 0;
+div.title {
+    padding: 0;
 }
 
 p.h1 {
     font-size: 140%;
     font-weight: bold;
-    padding: 10px 8px 0 20px;
+    padding: 22px 10px 0 16px;
 }
 
 p.h2 {
-    color: #86b6d7;
-    font-size: 105%;
-    font-weight: bold;
-    padding: 10px 8px 0 20px;
+    color: #76a6c7;
+    font-size: 110%;
+    padding: 8px 10px 0 16px;
+}
+
+p.other {
+    padding: 36px 10px 0 10px;
+    text-align: center;
 }
 
 p.text {
@@ -38,10 +38,22 @@ p.text {
     text-align: justify;
 }
 
-p.other {
-    padding: 40px 10px 0 10px;
-    text-align: center;
+td.icon {
+    padding: 26px 0 0 20px;
 }
+
+td.powered-by-icon {
+    background-color: white;
+    border: 1px solid #0e2e58;
+    padding: 6px 6px 6px 8px;
+}
+
+td.powered-by-text {
+    padding-left: 16px;
+}
+
+
+
 
 span {
     color: #86b6d7;
@@ -54,7 +66,6 @@ a {
 
 a.close {
     color: #86b6d7;
-    font-size: 105%;
-    font-weight: bold;
+    font-size: 110%;
     padding: 40px 0 0 0;
 }
