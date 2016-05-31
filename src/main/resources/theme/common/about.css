@@ -6,34 +6,27 @@ a {
 a.close {
     color: #86b6d7;
     font-size: 110%;
-    padding: 40px 0 0 0;
 }
 
-body, table, p {
+a.logo-link {
+    color: #3e5e88;
+}
+
+body, div, p, table, td, tr {
     background-color: #3e5e88;
     color: #eeeeee;
     font-family: Tahoma, Ubuntu, Dialog, sans-serif;
     font-size: 13px;
-    line-height: 160%;
     margin: 0;
     padding: 0;
 }
 
-div.powered-by {
-    padding: 32px 10px 0 10px;
-}
-
 div.title {
-    padding: 24px 10px 0 10px;
-}
-
-p.brief {
     padding: 32px 10px 0 10px;
-    text-align: center;
 }
 
 p.description {
-    padding: 32px 14px 0 14px;
+    padding: 40px 20px 0 20px;
     text-align: justify;
 }
 
@@ -49,20 +42,15 @@ p.heading2 {
     padding: 10px 0 0 16px;
 }
 
+p.short {
+    padding: 50px 20px 0 20px;
+    text-align: center;
+}
+
 span {
     color: #86b6d7;
 }
 
-td.icon {
-    padding: 4px 0 0 0;
-}
-
-td.powered-by-icon {
-    background-color: white;
-    border: 1px solid #0e2e58;
-    padding: 6px 6px 6px 8px;
-}
-
-td.powered-by-text {
-    padding: 0 0 0 20px;
+td.logo-cell {
+    padding: 20px 10px 0 10px;
 }

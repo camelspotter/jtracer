@@ -161,6 +161,7 @@ public class ApplicationCore implements AutoInjectable,
 			application.activate();
 			active = true;
 
+			utilitySvc.createTemporaryDirectory(true);
 			installShutdownHook();
 
 			if (properties.isEnabled("envisage")) {

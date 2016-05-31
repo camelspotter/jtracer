@@ -1,5 +1,6 @@
 package net.libcsdbg.jtracer.service.util;
 
+import net.libcsdbg.jtracer.component.MainFrame;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import org.qi4j.api.activation.ActivatorAdapter;
@@ -14,6 +15,7 @@ import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -69,6 +71,33 @@ public interface UtilityService extends ServiceComposite,
 		}
 
 		@Override
+		public File createTemporaryDirectory(Boolean autoDelete)
+		{
+			try {
+				String param = registrySvc.get("name");
+				if (param == null) {
+					param = MainFrame.Config.name;
+				}
+
+				File retval =
+					Files.createTempDirectory("." + param.trim())
+					     .toFile();
+
+				if (autoDelete) {
+					retval.deleteOnExit();
+				}
+
+				return retval;
+			}
+			catch (RuntimeException err) {
+				throw err;
+			}
+			catch (Throwable err) {
+				throw new RuntimeException(err);
+			}
+		}
+
+		@Override
 		public Process execute(String workingDir, String executable, Boolean async, String... args)
 		{
 			try {
@@ -103,6 +132,107 @@ public interface UtilityService extends ServiceComposite,
 			catch (Throwable err) {
 				throw new RuntimeException(err);
 			}
+		}
+
+		@SuppressWarnings("ResultOfMethodCallIgnored")
+		@Override
+		public List<File> extractJar(File jar, File dir, JProgressBar bar)
+		{
+			/* List<File> retval = new ArrayList<>(Config.preallocSize);
+
+			if (dir == null) {
+				dir = createTemporaryDirectory(true);
+			}
+
+			retval.add(dir);
+			boolean autoDelete = false;
+			if (jar == null) {
+				autoDelete = true;
+				dir.deleteOnExit();
+				jar = new File(System.getProperty("java.class.path"));
+			}
+
+			try (JarInputStream in = new JarInputStream(new FileInputStream(jar))) {
+				ZipEntry entry;
+				float bytes = 0, size = jar.length();
+				while ((entry = in.getNextEntry()) != null) {
+					File from = new File(entry.getName());
+					File to = new File(dir, entry.getName());
+
+					if (entry.isDirectory()) {
+						String parts[] = entry.getName().split(File.separator);
+						File subDirectory = new File(dir, "");
+						if (subDirectory.exists()) {
+							continue;
+						}
+
+						for (String part : parts) {
+							subDirectory = new File(subDirectory, part);
+							if (!subDirectory.mkdir()) {
+								throw new RuntimeException("Failed to create sub-directory " + subDirectory.getAbsolutePath());
+							}
+
+							retval.add(subDirectory);
+							bytes += to.length();
+
+							if (bar != null) {
+								bar.setValue((int) ((bytes / size) * 100));
+							}
+
+							if (autoDelete) {
+								subDirectory.deleteOnExit();
+							}
+						}
+
+						loggerSvc.debug(getClass(), "Created directory " + subDirectory.getAbsolutePath());
+						continue;
+					}
+
+					loggerSvc.debug(getClass(), from.getAbsolutePath() + " -> " + to.getAbsolutePath());
+
+					if (to.exists()) {
+						continue;
+					}
+
+					retval.add(to);
+					to.createNewFile();
+					if (autoDelete) {
+						to.deleteOnExit();
+					}
+
+					DataOutputStream out = new DataOutputStream(new FileOutputStream(to));
+					while (in.available() >= 1) {
+						int data = in.read();
+						if (data == -1) {
+							break;
+						}
+
+						out.writeByte(data);
+						bytes++;
+
+						if (bar != null) {
+							bar.setValue((int) ((bytes / size) * 100));
+						}
+					}
+
+					out.close();
+				}
+
+				if (bar != null) {
+					bar.setValue(100);
+				}
+
+				in.close();
+				return retval;
+			}
+			catch (RuntimeException err) {
+				throw err;
+			}
+			catch (Throwable err) {
+				throw new RuntimeException(err);
+			} */
+
+			return new ArrayList<>();
 		}
 
 		@Override

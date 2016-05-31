@@ -1,14 +1,16 @@
 <html>
 <head>
-    <link rel="stylesheet" type="text/css" href="about.css">
+    <link rel="stylesheet"
+          type="text/css"
+          href="about.css">
 </head>
 
 <body>
 <div class="title" align="center">
     <table>
         <tr>
-            <td class="icon">
-                <img src="icon.png" width="80" height="80">
+            <td>
+                <img src="icon.png">
             </td>
             <td>
                 <p class="heading1">${name} ${project.version}</p>
@@ -24,29 +26,32 @@
     It is essential for <span>cross-debugging</span> on target platforms which can't visualize output.
 </p>
 
-<p class="brief">
+<p class="short">
     <a href="http://freecode.com/projects/jtracer">http://freecode.com/projects/jtracer</a><br>
     <a href="http://freecode.com/projects/libcsdbg">http://freecode.com/projects/libcsdbg</a>
 </p>
 
-<p class="brief">
+<p class="short">
     Copyright &copy; ${project.copyright} <a href="mailto:${project.author.mail}">${project.author}</a><br>
-    <a href="http://www.gnu.org/copyleft/gpl.html">${project.license}</a>
+    <a href="http://www.gnu.org/copyleft/gpl.html">${project.license}</a><br><br>
+    Powered by:
 </p>
 
-<div class="powered-by" align="center">
+<div align="center">
     <table>
         <tr>
-            <td class="powered-by-icon"><img src="zest.png"></td>
-            <td class="powered-by-text">
-                Powered by:<br>
-                <a href="http://zest.apache.org/">${project.poweredBy}</a>
+            <td class="logo-cell">
+                <a class="logo-link" href="http://zest.apache.org/"><img src="zest_logo.png"></a>
+            </td>
+
+            <td class="logo-cell">
+                <a class="logo-link" href="http://www.apache.org/"><img src="asf_logo.png"></a>
             </td>
         </tr>
     </table>
 </div>
 
-<p class="brief">
+<p class="short">
     <a class="close" href="">Close</a>
 </p>
 </body>

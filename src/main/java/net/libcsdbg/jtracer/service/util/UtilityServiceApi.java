@@ -2,6 +2,7 @@ package net.libcsdbg.jtracer.service.util;
 
 import net.libcsdbg.jtracer.annotation.constraint.Name;
 import net.libcsdbg.jtracer.annotation.constraint.NameConstraint;
+import org.qi4j.api.common.Optional;
 import org.qi4j.api.constraint.Constraints;
 import org.qi4j.library.constraints.annotation.URI;
 
@@ -18,7 +19,11 @@ public interface UtilityServiceApi extends UtilityServiceState
 
 	Process browse(URL url);
 
+	File createTemporaryDirectory(Boolean autoDelete);
+
 	Process execute(@URI String workingDir, @Name String executable, Boolean async, String... args);
+
+	List<File> extractJar(@Optional File jar, @Optional File dir, @Optional JProgressBar progressMonitor);
 
 	File getHomeDirectory();
 
