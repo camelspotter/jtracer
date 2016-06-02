@@ -1,6 +1,10 @@
 <profile>
     <id>release-standard</id>
 
+    <build>
+        <finalName>jTracer-1.04</finalName>
+    </build>
+
     <activation>
         <activeByDefault>false</activeByDefault>
     </activation>

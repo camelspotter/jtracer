@@ -1,24 +1,31 @@
 package net.libcsdbg.jtracer.service.util;
 
+import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.component.MainFrame;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
+import net.libcsdbg.jtracer.service.util.tools.Filter;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
 import org.qi4j.api.injection.scope.Service;
+import org.qi4j.api.injection.scope.Structure;
 import org.qi4j.api.mixin.Mixins;
 import org.qi4j.api.service.ServiceComposite;
 import org.qi4j.api.service.ServiceReference;
+import org.qi4j.api.structure.Module;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.io.File;
+import java.io.FileInputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.jar.JarInputStream;
+import java.util.zip.ZipEntry;
 
 @Mixins(UtilityService.Mixin.class)
 @Activators(UtilityService.Activator.class)
@@ -27,6 +34,9 @@ public interface UtilityService extends ServiceComposite,
 {
 	public abstract class Mixin implements UtilityService
 	{
+		@Structure
+		protected Module selfContainer;
+
 		@Service
 		protected LoggerService loggerSvc;
 
@@ -70,18 +80,34 @@ public interface UtilityService extends ServiceComposite,
 			}
 		}
 
+		@Factory(Factory.Type.COMPOSITE)
 		@Override
-		public File createTemporaryDirectory(Boolean autoDelete)
+		public Filter createFilter()
+		{
+			return selfContainer.newTransient(Filter.class);
+		}
+
+		@Override
+		public File createTemporaryDirectory(Boolean autoDelete, String... components)
 		{
 			try {
-				String param = registrySvc.get("name");
-				if (param == null) {
-					param = MainFrame.Config.name;
+				String path;
+				if (components.length > 0) {
+					path = String.join("_", components);
+				}
+
+				else {
+					path = registrySvc.get("name");
+					if (path == null) {
+						path = MainFrame.Config.name;
+					}
+
+					path = "." + path.trim();
 				}
 
 				File retval =
-					Files.createTempDirectory("." + param.trim())
-					     .toFile();
+						Files.createTempDirectory(path)
+						     .toFile();
 
 				if (autoDelete) {
 					retval.deleteOnExit();
@@ -134,32 +160,50 @@ public interface UtilityService extends ServiceComposite,
 			}
 		}
 
-		@SuppressWarnings("ResultOfMethodCallIgnored")
 		@Override
 		public List<File> extractJar(File jar, File dir, JProgressBar bar)
 		{
-			/* List<File> retval = new ArrayList<>(Config.preallocSize);
+			List<File> retval = new ArrayList<>(Config.preallocSize);
 
+			/* If no directory is given, a random, temporary directory is created */
 			if (dir == null) {
-				dir = createTemporaryDirectory(true);
+				dir = createTemporaryDirectory(false);
 			}
 
+			/* The first entry in the result list is the directory the jar is extracted in */
 			retval.add(dir);
-			boolean autoDelete = false;
+			loggerSvc.info(getClass(), "Java archive extracted in '" + dir.getAbsolutePath() + "'");
+
+			/* If no jar is given, then a self-extracted jar is assumed */
 			if (jar == null) {
-				autoDelete = true;
-				dir.deleteOnExit();
-				jar = new File(System.getProperty("java.class.path"));
+				String classpath = System.getProperty("java.class.path");
+
+				jar = new File(classpath);
+				if (!jar.exists() || !jar.canRead()) {
+					throw new RuntimeException("Failed to auto-detect the self-extracted jar file (classpath -> " + classpath + ")");
+				}
+
+				loggerSvc.info(getClass(), "Self-extracted jar is '" + jar.getAbsolutePath() + "'");
 			}
 
 			try (JarInputStream in = new JarInputStream(new FileInputStream(jar))) {
+				float bytes = 0;
+				float size = jar.length();
+
+				Filter filter = createFilter();
 				ZipEntry entry;
-				float bytes = 0, size = jar.length();
 				while ((entry = in.getNextEntry()) != null) {
 					File from = new File(entry.getName());
 					File to = new File(dir, entry.getName());
 
-					if (entry.isDirectory()) {
+					if (!filter.accept(from)) {
+						continue;
+					}
+
+					loggerSvc.debug(getClass(), "Deflating '" + from.getPath() + "' to '" + to.getPath() + "'");
+					//loggerSvc.debug(getClass(), "Deflating '" + from.getCanonicalPath() + "' to '" + to.getCanonicalPath() + "'");
+
+					/* if (entry.isDirectory()) {
 						String parts[] = entry.getName().split(File.separator);
 						File subDirectory = new File(dir, "");
 						if (subDirectory.exists()) {
@@ -215,14 +259,13 @@ public interface UtilityService extends ServiceComposite,
 						}
 					}
 
-					out.close();
+					out.close(); */
 				}
 
 				if (bar != null) {
 					bar.setValue(100);
 				}
 
-				in.close();
 				return retval;
 			}
 			catch (RuntimeException err) {
@@ -230,9 +273,7 @@ public interface UtilityService extends ServiceComposite,
 			}
 			catch (Throwable err) {
 				throw new RuntimeException(err);
-			} */
-
-			return new ArrayList<>();
+			}
 		}
 
 		@Override
@@ -288,6 +329,14 @@ public interface UtilityService extends ServiceComposite,
 			catch (Throwable err) {
 				throw new RuntimeException(err);
 			}
+		}
+
+		@Override
+		public Boolean isSelfExecutableJar()
+		{
+			return
+				System.getProperty("java.class.path")
+				      .equals(System.getProperty("sun.java.command"));
 		}
 
 		@Override
@@ -349,6 +398,8 @@ public interface UtilityService extends ServiceComposite,
 		public static class Config
 		{
 			public static Integer[] iconSizes = { 16, 24, 32, 48, 64, 128 };
+
+			public static Integer preallocSize = 128;
 		}
 	}
 

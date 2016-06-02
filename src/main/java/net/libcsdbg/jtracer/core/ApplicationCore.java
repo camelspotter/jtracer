@@ -3,6 +3,7 @@ package net.libcsdbg.jtracer.core;
 import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.component.Alert;
 import net.libcsdbg.jtracer.component.MainFrame;
+import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +29,9 @@ public class ApplicationCore implements AutoInjectable,
 
 	@Service
 	protected LoggerService loggerSvc;
+
+	@Service
+	protected RegistryService registrySvc;
 
 	@Service
 	protected UtilityService utilitySvc;
@@ -157,11 +161,14 @@ public class ApplicationCore implements AutoInjectable,
 		ApplicationCore.attachCurrent(this);
 		selfInject();
 
+		if (utilitySvc.isSelfExecutableJar()) {
+			utilitySvc.extractJar(null, null, null);
+		}
+
 		try {
 			application.activate();
 			active = true;
 
-			utilitySvc.createTemporaryDirectory(true);
 			installShutdownHook();
 
 			if (properties.isEnabled("envisage")) {

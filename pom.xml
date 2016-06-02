@@ -3,12 +3,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>jTracer</name>
+    <packaging>jar</packaging>
+
     <groupId>net.libcsdbg</groupId>
     <artifactId>jtracer</artifactId>
     <version>1.04</version>
-
-    <name>jTracer</name>
-    <packaging>jar</packaging>
 
     <build>
         <plugins>
@@ -179,6 +179,10 @@
 		<profile>
 		    <id>release-standard</id>
 		
+		    <build>
+		        <finalName>jTracer-1.04</finalName>
+		    </build>
+		
 		    <activation>
 		        <activeByDefault>false</activeByDefault>
 		    </activation>
@@ -201,6 +205,10 @@
 		</profile>
 		<profile>
 		    <id>development-standard</id>
+		
+		    <build>
+		        <finalName>jTracer-1.04</finalName>
+		    </build>
 		
 		    <activation>
 		        <activeByDefault>true</activeByDefault>

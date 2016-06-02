@@ -10,6 +10,8 @@ import net.libcsdbg.jtracer.service.text.DictionaryService;
 import net.libcsdbg.jtracer.service.text.parse.Token;
 import net.libcsdbg.jtracer.service.text.parse.Tokenizer;
 import net.libcsdbg.jtracer.service.util.UtilityService;
+import net.libcsdbg.jtracer.service.util.tools.FileFilter;
+import net.libcsdbg.jtracer.service.util.tools.Filter;
 import org.qi4j.api.common.Visibility;
 import org.qi4j.bootstrap.*;
 
@@ -151,6 +153,10 @@ public class Assembler implements ApplicationAssembler
 
 	protected Assembler assembleUtilityService(ModuleAssembly module)
 	{
+		module.transients(Filter.class)
+		      .withMixins(FileFilter.class)
+		      .visibleIn(Visibility.application);
+
 		module.services(UtilityService.class)
 		      .identifiedBy("Utility Service")
 		      .visibleIn(Visibility.application)

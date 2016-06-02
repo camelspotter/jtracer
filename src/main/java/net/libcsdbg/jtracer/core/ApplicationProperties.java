@@ -31,6 +31,12 @@ public class ApplicationProperties
 		}
 	}
 
+	public static void dumpSystemProperties()
+	{
+		System.getProperties()
+		      .list(System.out);
+	}
+
 	public String getApplicationFullName()
 	{
 		return getProperty(Config.fullNameParam);
