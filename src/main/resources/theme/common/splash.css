@@ -1,0 +1,24 @@
+body, div, p, table, td, tr {
+    background-color: #3e5e88;
+    color: #eeeeee;
+    font-family: Tahoma, Ubuntu, Dialog, sans-serif;
+    font-size: 13px;
+    margin: 0;
+    padding: 0;
+}
+
+div.title {
+    padding: 32px 10px 40px 10px;
+}
+
+p.heading1 {
+    font-size: 145%;
+    font-weight: bold;
+    padding: 0 0 0 16px;
+}
+
+p.heading2 {
+    color: #76a6c7;
+    font-size: 110%;
+    padding: 10px 0 0 16px;
+}

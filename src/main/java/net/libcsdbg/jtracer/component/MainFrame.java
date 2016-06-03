@@ -305,8 +305,8 @@ public class MainFrame extends JFrame implements ActionListener,
 		GridBagConstraints bagConstraints = new GridBagConstraints();
 		JPanel inset = new JPanel(layout);
 
-		bagConstraints.gridy = 0;
 		bagConstraints.gridx = 0;
+		bagConstraints.gridy = 0;
 		bagConstraints.weightx = 1;
 		bagConstraints.weighty = 1;
 		bagConstraints.fill = GridBagConstraints.BOTH;

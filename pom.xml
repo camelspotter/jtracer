@@ -180,7 +180,7 @@
 		    <id>release-standard</id>
 		
 		    <build>
-		        <finalName>jTracer-1.04</finalName>
+		        <finalName>${project.name}-${project.version}</finalName>
 		    </build>
 		
 		    <activation>
@@ -207,7 +207,7 @@
 		    <id>development-standard</id>
 		
 		    <build>
-		        <finalName>jTracer-1.04</finalName>
+		        <finalName>${project.name}-${project.version}</finalName>
 		    </build>
 		
 		    <activation>

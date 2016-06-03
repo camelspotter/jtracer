@@ -83,6 +83,7 @@ public class Assembler implements ApplicationAssembler
 		               Desktop.class,
 		               InputField.class,
 		               LogPane.class,
+		               ProgressBar.class,
 		               TracePane.class)
 		      .visibleIn(Visibility.application);
 
@@ -97,6 +98,7 @@ public class Assembler implements ApplicationAssembler
 		               MainFrame.class,
 		               MenuBar.class,
 		               Session.class,
+		               Splash.class,
 		               StatusBar.class,
 		               ToolBar.class,
 		               TraceStatusBar.class,
@@ -154,7 +156,8 @@ public class Assembler implements ApplicationAssembler
 	protected Assembler assembleUtilityService(ModuleAssembly module)
 	{
 		module.transients(Filter.class)
-		      .withMixins(FileFilter.class)
+		      .withMixins(FileFilter.class,
+		                  Filter.Mixin.class)
 		      .visibleIn(Visibility.application);
 
 		module.services(UtilityService.class)

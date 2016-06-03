@@ -12,42 +12,41 @@ public abstract class FileFilter implements Filter
 		}
 
 		File f = (File) entry;
-		String path = f.getAbsolutePath();
+		String path = f.getPath();
 
-		if (isSubdirectoryOf(f, "dictionary")) {
-			return true;
+		String separator = File.separator;
+		if (separator.equals("\\")) {
+			separator = separator.concat("\\");
 		}
 
-		if (path.contains("/dictionary/") ||
-		    path.contains("/theme/") ||
-		    path.contains("/var/")) {
-			return true;
+		for (String dir : Config.directories) {
+			if (path.matches("^" + dir + separator + "?.*$")) {
+				return true;
+			}
 		}
 
-		else if (path.endsWith("jtracer.properties") ||
-		         path.endsWith("log4j.properties") ||
-		         path.endsWith("log4j2.xml")) {
-			return true;
+		for (String file : Config.files) {
+			if (path.equals(file)) {
+				return true;
+			}
 		}
 
 		return false;
 	}
 
-	protected Boolean isSubdirectoryOf(File file, String dir)
-	{
-		try {
-			String basename;
-			if (file.isDirectory()) {
-				basename = file.getCanonicalPath();
-			}
-			else {
-				basename = file.getParent();
-			}
 
-			return basename.matches("/" + dir + "/?");
-		}
-		catch (Throwable err) {
-			return false;
-		}
+	public static class Config
+	{
+		public static String[] directories = {
+			"dictionary",
+			"theme",
+			"var"
+		};
+
+		public static String[] files = {
+			"jtracer.properties",
+			"log4j.properties",
+			"log4j2.xml"
+		};
 	}
 }

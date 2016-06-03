@@ -3,6 +3,7 @@ package net.libcsdbg.jtracer.core;
 import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.component.Alert;
 import net.libcsdbg.jtracer.component.MainFrame;
+import net.libcsdbg.jtracer.component.Splash;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
@@ -162,7 +163,9 @@ public class ApplicationCore implements AutoInjectable,
 		selfInject();
 
 		if (utilitySvc.isSelfExecutableJar()) {
-			utilitySvc.extractJar(null, null, null);
+			Splash splash = new Splash();
+			utilitySvc.extractJar(null, null, splash.getProgress());
+			splash.setVisible(false);
 		}
 
 		try {

@@ -17,8 +17,10 @@ import org.qi4j.api.structure.Module;
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -161,7 +163,7 @@ public interface UtilityService extends ServiceComposite,
 		}
 
 		@Override
-		public List<File> extractJar(File jar, File dir, JProgressBar bar)
+		public List<File> extractJar(File jar, File dir, JProgressBar progressBar)
 		{
 			List<File> retval = new ArrayList<>(Config.preallocSize);
 
@@ -172,23 +174,42 @@ public interface UtilityService extends ServiceComposite,
 
 			/* The first entry in the result list is the directory the jar is extracted in */
 			retval.add(dir);
-			loggerSvc.info(getClass(), "Java archive extracted in '" + dir.getAbsolutePath() + "'");
 
 			/* If no jar is given, then a self-extracted jar is assumed */
+			boolean selfexec = false;
 			if (jar == null) {
+				selfexec = true;
 				String classpath = System.getProperty("java.class.path");
 
 				jar = new File(classpath);
 				if (!jar.exists() || !jar.canRead()) {
 					throw new RuntimeException("Failed to auto-detect the self-extracted jar file (classpath -> " + classpath + ")");
 				}
-
-				loggerSvc.info(getClass(), "Self-extracted jar is '" + jar.getAbsolutePath() + "'");
 			}
+
+			StringBuilder message = new StringBuilder(Config.preallocSize);
+			message.append("Java archive '")
+			       .append(jar.getAbsolutePath())
+			       .append("' ");
+
+			if (selfexec) {
+				message.append("(self-executable and self-extracted) ");
+			}
+
+			message.append("extracted in '")
+			       .append(dir.getAbsolutePath())
+			       .append("'");
+
+			loggerSvc.info(getClass(), message.toString());
 
 			try (JarInputStream in = new JarInputStream(new FileInputStream(jar))) {
 				float bytes = 0;
 				float size = jar.length();
+
+				if (progressBar != null) {
+					progressBar.setMinimum((int) bytes);
+					progressBar.setMaximum((int) size);
+				}
 
 				Filter filter = createFilter();
 				ZipEntry entry;
@@ -196,52 +217,40 @@ public interface UtilityService extends ServiceComposite,
 					File from = new File(entry.getName());
 					File to = new File(dir, entry.getName());
 
-					if (!filter.accept(from)) {
+					if (!filter.accept(from) || to.exists()) {
 						continue;
 					}
 
-					loggerSvc.debug(getClass(), "Deflating '" + from.getPath() + "' to '" + to.getPath() + "'");
-					//loggerSvc.debug(getClass(), "Deflating '" + from.getCanonicalPath() + "' to '" + to.getCanonicalPath() + "'");
+					loggerSvc.debug(getClass(), "Deflating '" + from.getPath() + "' to '" + to.getCanonicalPath() + "'");
+					if (entry.isDirectory()) {
+						File subdir = dir;
+						for (String part : entry.getName().split(File.separator)) {
+							subdir = new File(subdir, part);
 
-					/* if (entry.isDirectory()) {
-						String parts[] = entry.getName().split(File.separator);
-						File subDirectory = new File(dir, "");
-						if (subDirectory.exists()) {
-							continue;
-						}
-
-						for (String part : parts) {
-							subDirectory = new File(subDirectory, part);
-							if (!subDirectory.mkdir()) {
-								throw new RuntimeException("Failed to create sub-directory " + subDirectory.getAbsolutePath());
+							if (subdir.exists()) {
+								continue;
 							}
 
-							retval.add(subDirectory);
-							bytes += to.length();
-
-							if (bar != null) {
-								bar.setValue((int) ((bytes / size) * 100));
+							if (!subdir.mkdir()) {
+								throw new RuntimeException("Failed to create sub-directory '" + subdir.getAbsolutePath() + "'");
 							}
 
-							if (autoDelete) {
-								subDirectory.deleteOnExit();
+							retval.add(subdir);
+							bytes += subdir.length();
+
+							if (progressBar != null) {
+								progressBar.setValue((int) bytes);
+								//progressBar.setValue((int) ((bytes / size) * 100));
 							}
 						}
 
-						loggerSvc.debug(getClass(), "Created directory " + subDirectory.getAbsolutePath());
-						continue;
-					}
-
-					loggerSvc.debug(getClass(), from.getAbsolutePath() + " -> " + to.getAbsolutePath());
-
-					if (to.exists()) {
+						loggerSvc.debug(getClass(), "Created sub-directory '" + subdir.getAbsolutePath() + "'");
 						continue;
 					}
 
 					retval.add(to);
-					to.createNewFile();
-					if (autoDelete) {
-						to.deleteOnExit();
+					if (!to.createNewFile()) {
+						throw new RuntimeException("Failed to create file '" + to.getAbsolutePath() + "'");
 					}
 
 					DataOutputStream out = new DataOutputStream(new FileOutputStream(to));
@@ -254,16 +263,17 @@ public interface UtilityService extends ServiceComposite,
 						out.writeByte(data);
 						bytes++;
 
-						if (bar != null) {
-							bar.setValue((int) ((bytes / size) * 100));
+						if (progressBar != null) {
+							progressBar.setValue((int) bytes);
+							// progressBar.setValue((int) ((bytes / size) * 100));
 						}
 					}
 
-					out.close(); */
+					out.close();
 				}
 
-				if (bar != null) {
-					bar.setValue(100);
+				if (progressBar != null) {
+					progressBar.setValue((int) size);
 				}
 
 				return retval;
