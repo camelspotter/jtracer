@@ -1,13 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-    <configuration default="false"
-                   name="Run jTracer-1.04 (development-standard)"
-                   type="Application"
-                   factoryName="Application">
-        <extension name="coverage"
-                   enabled="false"
-                   merge="false"
-                   sample_coverage="true"
-                   runner="idea"/>
+    <configuration default="false" name="Run jTracer-1.04 (development-standard)" type="Application" factoryName="Application">
+        <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea"/>
         <option name="MAIN_CLASS_NAME" value="net.libcsdbg.jtracer.core.ApplicationCore"/>
         <option name="VM_PARAMETERS" value="-splash:target/classes/theme/common/splash.png"/>
         <option name="PROGRAM_PARAMETERS" value=""/>

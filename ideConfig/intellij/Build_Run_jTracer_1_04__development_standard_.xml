@@ -1,17 +1,9 @@
 <component name="ProjectRunConfigurationManager">
-    <configuration default="false"
-                   name="Build/Run jTracer-1.04 (development-standard)"
-                   type="Application"
-                   factoryName="Application"
-                   singleton="true">
-        <extension name="coverage"
-                   enabled="false"
-                   merge="false"
-                   sample_coverage="true"
-                   runner="idea"/>
+    <configuration default="false" name="Build/Run jTracer-1.04 (development-standard)" type="Application" factoryName="Application" singleton="true">
+        <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea"/>
         <option name="MAIN_CLASS_NAME" value="net.libcsdbg.jtracer.core.ApplicationCore"/>
         <option name="VM_PARAMETERS" value="-splash:target/classes/theme/common/splash.png"/>
-        <option name="PROGRAM_PARAMETERS" value=""/>
+        <option name="PROGRAM_PARAMETERS" value="jtracer.properties dump-properties"/>
         <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$"/>
         <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false"/>
         <option name="ALTERNATIVE_JRE_PATH" value=""/>
@@ -30,13 +22,9 @@
         <ConfigurationWrapper RunnerId="Run"/>
         <method>
             <option name="Make" enabled="false"/>
-            <option name="RunConfigurationTask"
-                    enabled="true"
-                    run_configuration_name="Build jTracer Jar (development-standard)"
+            <option name="RunConfigurationTask" enabled="true" run_configuration_name="Build jTracer Jar (development-standard)"
                     run_configuration_type="MavenRunConfiguration"/>
-            <option name="RunConfigurationTask"
-                    enabled="true"
-                    run_configuration_name="Install jTracer Jar (development-standard)"
+            <option name="RunConfigurationTask" enabled="true" run_configuration_name="Install jTracer Jar (development-standard)"
                     run_configuration_type="MavenRunConfiguration"/>
         </method>
     </configuration>

@@ -1,4 +1,4 @@
-package net.libcsdbg.jtracer.service.util.tools;
+package net.libcsdbg.jtracer.service.persistence.tools;
 
 import java.io.File;
 
@@ -8,7 +8,7 @@ public abstract class FileFilter implements Filter
 	public <T> Boolean accept(T entry)
 	{
 		if (!(entry instanceof File)) {
-			throw new IllegalArgumentException("entry (not a java.io.File object");
+			throw new IllegalArgumentException("entry (not a java.io.File object)");
 		}
 
 		File f = (File) entry;

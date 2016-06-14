@@ -40,7 +40,7 @@ public class Splash extends JDialog implements AutoInjectable
 			viewer.setPreferredSize(Config.preferredSize);
 			add(viewer, BorderLayout.CENTER);
 
-			progress = new ProgressBar(0, 100, "Installing");
+			progress = new ProgressBar(0, 100, "Initializing");
 			add(progress, BorderLayout.SOUTH);
 
 			setResizable(false);

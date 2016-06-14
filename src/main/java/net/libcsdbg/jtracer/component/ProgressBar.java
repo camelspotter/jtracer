@@ -6,6 +6,7 @@ import net.libcsdbg.jtracer.service.log.LoggerService;
 import org.qi4j.api.injection.scope.Service;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class ProgressBar extends JProgressBar implements AutoInjectable
 {
@@ -19,7 +20,7 @@ public class ProgressBar extends JProgressBar implements AutoInjectable
 	protected LoggerService loggerSvc;
 
 
-	protected String prefix;
+	protected String caption;
 
 
 	public ProgressBar()
@@ -29,27 +30,52 @@ public class ProgressBar extends JProgressBar implements AutoInjectable
 
 	public ProgressBar(Integer min, Integer max)
 	{
-		this(min, max, "");
+		this(min, max, "Initializing");
 	}
 
-	public ProgressBar(Integer min, Integer max, String prefix)
+	public ProgressBar(Integer min, Integer max, String caption)
 	{
 		super(min, max);
 		selfInject();
-
-		if (prefix != null && (prefix = prefix.trim()).length() > 0) {
-			this.prefix = prefix;
-			setToolTipText(prefix);
-			setString(prefix + " - 0%");
-		}
+		setCaption(caption);
+		setString(caption + " - 0%");
 
 		String widget = "progress-bar";
 		setFont(componentSvc.getFont(widget));
 		setForeground(componentSvc.getForegroundColor(widget));
 		setBackground(componentSvc.getBackgroundColor(widget));
 
-		setBorderPainted(true);
+		setBorder(new EmptyBorder(0, 0, 0, 0));
+		setBorderPainted(componentSvc.isEnabled("progress-bar-border"));
 		setStringPainted(true);
+	}
+
+	public ProgressBar delay(Long millis)
+	{
+		try {
+			Thread.sleep(millis);
+		}
+		catch (InterruptedException ignored) {
+		}
+
+		return this;
+	}
+
+	public ProgressBar setCaption(String caption)
+	{
+		if (caption == null) {
+			return this;
+		}
+
+		caption = caption.trim();
+		if (caption.length() == 0) {
+			return this;
+		}
+
+		this.caption = caption;
+		setToolTipText(caption);
+
+		return this;
 	}
 
 	@Override
@@ -60,9 +86,9 @@ public class ProgressBar extends JProgressBar implements AutoInjectable
 			try {
 				super.setValue(value);
 
-				if (prefix != null) {
+				if (caption != null) {
 					Double percent = 100 * getPercentComplete();
-					setString(prefix + " - " + percent.intValue() + "%");
+					setString(caption + " - " + percent.intValue() + "%");
 				}
 			}
 			catch (Throwable err) {

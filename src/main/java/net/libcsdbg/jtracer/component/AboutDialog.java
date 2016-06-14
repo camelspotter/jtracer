@@ -43,9 +43,7 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 			param = MainFrame.Config.name;
 		}
 
-		param = param.trim();
-		setTitle("About " + param);
-
+		setTitle("About " + param.trim());
 		try {
 			JTextPane viewer = new JTextPane();
 
@@ -58,11 +56,11 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 			viewer.setEditable(false);
 			viewer.setFocusable(false);
 			viewer.setMargin(Config.preferredMargin);
-			viewer.setPreferredSize(Config.preferredSize);
 
 			viewer.addHyperlinkListener(this);
 			add(viewer, BorderLayout.CENTER);
 
+			setPreferredSize(Config.preferredSize);
 			setResizable(false);
 			setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 			pack();
@@ -108,6 +106,6 @@ public class AboutDialog extends JDialog implements AutoInjectable,
 
 		public static Insets preferredMargin = new Insets(0, 0, 0, 0);
 
-		public static Dimension preferredSize = new Dimension(380, 640);
+		public static Dimension preferredSize = new Dimension(390, 570);
 	}
 }

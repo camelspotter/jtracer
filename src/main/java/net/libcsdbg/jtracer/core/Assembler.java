@@ -6,12 +6,14 @@ import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
 import net.libcsdbg.jtracer.service.log.LoggerService;
+import net.libcsdbg.jtracer.service.persistence.jar.JarService;
+import net.libcsdbg.jtracer.service.persistence.storage.FileSystemService;
 import net.libcsdbg.jtracer.service.text.DictionaryService;
 import net.libcsdbg.jtracer.service.text.parse.Token;
 import net.libcsdbg.jtracer.service.text.parse.Tokenizer;
 import net.libcsdbg.jtracer.service.util.UtilityService;
-import net.libcsdbg.jtracer.service.util.tools.FileFilter;
-import net.libcsdbg.jtracer.service.util.tools.Filter;
+import net.libcsdbg.jtracer.service.persistence.tools.FileFilter;
+import net.libcsdbg.jtracer.service.persistence.tools.Filter;
 import org.qi4j.api.common.Visibility;
 import org.qi4j.bootstrap.*;
 
@@ -44,6 +46,8 @@ public class Assembler implements ApplicationAssembler
 		assembleLoggerService(module);
 		assembleRegistryService(module);
 		assembleComponentService(module);
+		assembleFileSystemService(module);
+		assembleJarService(module);
 		assembleUtilityService(module);
 		assembleDictionaryService(module);
 
@@ -111,7 +115,8 @@ public class Assembler implements ApplicationAssembler
 	protected Assembler assembleCoreObjects(ModuleAssembly module) throws AssemblyException
 	{
 		module.objects(ApplicationCore.class,
-		               GenericUncaughtExceptionHandler.class)
+		               GenericUncaughtExceptionHandler.class,
+		               Installer.class)
 		      .visibleIn(Visibility.application);
 
 		return this;
@@ -127,6 +132,26 @@ public class Assembler implements ApplicationAssembler
 
 		module.services(DictionaryService.class)
 		      .identifiedBy("Dictionary Service")
+		      .visibleIn(Visibility.application)
+		      .instantiateOnStartup();
+
+		return this;
+	}
+
+	protected Assembler assembleFileSystemService(ModuleAssembly module)
+	{
+		module.services(FileSystemService.class)
+		      .identifiedBy("File System Service")
+		      .visibleIn(Visibility.application)
+		      .instantiateOnStartup();
+
+		return this;
+	}
+
+	protected Assembler assembleJarService(ModuleAssembly module)
+	{
+		module.services(JarService.class)
+		      .identifiedBy("Java Archive Service")
 		      .visibleIn(Visibility.application)
 		      .instantiateOnStartup();
 
@@ -155,6 +180,9 @@ public class Assembler implements ApplicationAssembler
 
 	protected Assembler assembleUtilityService(ModuleAssembly module)
 	{
+		module.transients(FileFilter.class)
+		      .visibleIn(Visibility.application);
+
 		module.transients(Filter.class)
 		      .withMixins(FileFilter.class,
 		                  Filter.Mixin.class)

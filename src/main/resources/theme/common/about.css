@@ -17,8 +17,13 @@ body, div, p, table, td, tr {
     color: #eeeeee;
     font-family: Tahoma, Ubuntu, Dialog, sans-serif;
     font-size: 13px;
+    line-height: 150%;
     margin: 0;
     padding: 0;
+}
+
+div {
+    padding: 20px 10px 10px 10px;
 }
 
 div.title {
@@ -26,7 +31,7 @@ div.title {
 }
 
 p.description {
-    padding: 40px 20px 0 20px;
+    padding: 32px 20px 0 20px;
     text-align: justify;
 }
 
@@ -43,7 +48,7 @@ p.heading2 {
 }
 
 p.short {
-    padding: 50px 20px 0 20px;
+    padding: 32px 20px 0 20px;
     text-align: center;
 }
 
@@ -52,5 +57,5 @@ span {
 }
 
 td.logo-cell {
-    padding: 20px 10px 0 10px;
+    padding: 0 0 0 20px;
 }

@@ -3,7 +3,6 @@ package net.libcsdbg.jtracer.core;
 import net.libcsdbg.jtracer.annotation.Note;
 import net.libcsdbg.jtracer.component.Alert;
 import net.libcsdbg.jtracer.component.MainFrame;
-import net.libcsdbg.jtracer.component.Splash;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
@@ -24,6 +23,8 @@ public class ApplicationCore implements AutoInjectable,
                                         WindowListener
 {
 	protected static ApplicationCore current = null;
+
+	protected static Installer installer = null;
 
 	protected static Logger rootLogger = null;
 
@@ -91,6 +92,11 @@ public class ApplicationCore implements AutoInjectable,
 		return current;
 	}
 
+	public static Installer getInstaller()
+	{
+		return installer;
+	}
+
 	@Note("Root logger is eagerly initialized")
 	public static Logger getRootLogger()
 	{
@@ -104,6 +110,11 @@ public class ApplicationCore implements AutoInjectable,
 	@SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
 	public static void main(String... args)
 	{
+		installer = new Installer();
+		if (installer.isInstallationNeeded()) {
+			installer.preInstall();
+		}
+
 		ApplicationCore core = null;
 		int exitCode = Config.exitSuccess;
 
@@ -148,6 +159,11 @@ public class ApplicationCore implements AutoInjectable,
 			}
 		}
 
+		if (installer.isInstallationNeeded()) {
+			installer.rollbackPreInstallation()
+			         .finalizeInstallation();
+		}
+
 		System.out.println(Config.farewell);
 		System.exit(exitCode);
 	}
@@ -162,10 +178,8 @@ public class ApplicationCore implements AutoInjectable,
 		ApplicationCore.attachCurrent(this);
 		selfInject();
 
-		if (utilitySvc.isSelfExecutableJar()) {
-			Splash splash = new Splash();
-			utilitySvc.extractJar(null, null, splash.getProgress());
-			splash.setVisible(false);
+		if (installer.isInstallationNeeded()) {
+			installer.install();
 		}
 
 		try {
@@ -216,21 +230,23 @@ public class ApplicationCore implements AutoInjectable,
 	protected ApplicationCore installShutdownHook()
 	{
 		Runnable hook = () -> {
-			try {
-				synchronized (this) {
+			synchronized (this) {
+				try {
 					if (application == null || !active) {
 						return;
 					}
 
 					application.passivate();
+
+					/* The only case of log unrestricted of the dynamic log level */
+					getRootLogger().debug("Application '" + application.name() + "' asynchronously passivated");
+				}
+				catch (Throwable err) {
+					getRootLogger().catching(err);
+				}
+				finally {
 					active = false;
 				}
-
-				/* The only case of log unrestricted of the dynamic log level */
-				getRootLogger().debug("Application '" + application.name() + "' asynchronously passivated");
-			}
-			catch (Throwable err) {
-				getRootLogger().catching(err);
 			}
 		};
 
@@ -239,6 +255,7 @@ public class ApplicationCore implements AutoInjectable,
 			      .getThreadGroup();
 
 		Thread runner = new Thread(group, hook, Config.shutdownHookName);
+		runner.setDaemon(true);
 		runner.setUncaughtExceptionHandler(getUncaughtExceptionHandler());
 
 		Runtime.getRuntime()
@@ -251,7 +268,6 @@ public class ApplicationCore implements AutoInjectable,
 	{
 		try {
 			UIManager.setLookAndFeel(properties.getProperty("lnf"));
-			Thread.sleep(Config.startupDelay);
 		}
 		catch (Throwable ignored) {
 		}
@@ -294,11 +310,23 @@ public class ApplicationCore implements AutoInjectable,
 			return this;
 		}
 
+		/* Release global lock */
+		try {
+			if (globalLock != null) {
+				globalLock.release();
+				globalLock.close();
+			}
+		}
+		catch (Throwable ignored) {
+		}
+		finally {
+			globalLock = null;
+		}
+
 		ApplicationCore.detachCurrent();
 
 		try {
 			application.passivate();
-			active = false;
 			return this;
 		}
 		catch (RuntimeException err) {
@@ -306,6 +334,9 @@ public class ApplicationCore implements AutoInjectable,
 		}
 		catch (Throwable err) {
 			throw new RuntimeException(err);
+		}
+		finally {
+			active = false;
 		}
 	}
 
@@ -324,15 +355,16 @@ public class ApplicationCore implements AutoInjectable,
 		Thread[] threads = new Thread[group.activeCount()];
 		group.enumerate(threads, true);
 
-		for (Thread thread : threads) {
-			thread.setUncaughtExceptionHandler(getUncaughtExceptionHandler());
+		for (Thread t : threads) {
+			t.setUncaughtExceptionHandler(getUncaughtExceptionHandler());
 
 			StringBuilder message = new StringBuilder("Uncaught exception handler registered for thread '");
-			message.append(thread.getName())
+			message.append(t.getName())
 			       .append("' (id ")
-			       .append(thread.getId())
+			       .append(t.getId())
 			       .append(", group ")
-			       .append(thread.getThreadGroup().getName())
+			       .append(t.getThreadGroup()
+			                .getName())
 			       .append(")");
 
 			loggerSvc.info(getClass(), message.toString());
@@ -348,16 +380,18 @@ public class ApplicationCore implements AutoInjectable,
 	}
 
 	@Override
-	public synchronized void windowClosed(WindowEvent event)
+	public void windowClosed(WindowEvent event)
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
-		gui = null;
-		notifyAll();
+		synchronized (this) {
+			gui = null;
+			notifyAll();
+		}
 	}
 
 	@Override
-	public synchronized void windowClosing(WindowEvent event)
+	public void windowClosing(WindowEvent event)
 	{
 		loggerSvc.trace(getClass(), event.toString());
 
@@ -398,8 +432,6 @@ public class ApplicationCore implements AutoInjectable,
 		public static Integer exitFailure = 1;
 
 		public static Integer exitSuccess = 0;
-
-		public static Integer startupDelay = 2500;
 
 
 		public static String farewell = "Application complete";

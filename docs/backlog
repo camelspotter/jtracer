@@ -4,7 +4,6 @@ R {
 
 D {
     Sanitize theme icons (lock16, remove_trace16, unlock16)
-    Update splash screen
     Add license file (GPLv3)
     Create alternative themes
     Print dates using Locale

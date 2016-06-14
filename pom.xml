@@ -16,7 +16,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.3</version>
+                <version>3.5.1</version>
                 <inherited>true</inherited>
 
                 <configuration>
@@ -40,11 +40,10 @@
                             <mainClass>${project.entryPoint}</mainClass>
                         </manifest>
                         <manifestEntries>
-                            <Class-Path>lib/</Class-Path>
-                            <Implementation-Title>${name} ${project.description}</Implementation-Title>
+                            <Implementation-Title>${project.name} ${project.description}</Implementation-Title>
                             <Implementation-Vendor>${project.author}</Implementation-Vendor>
                             <Implementation-Version>${project.version}</Implementation-Version>
-                            <SplashScreen-Image>${splash}</SplashScreen-Image>
+                            <SplashScreen-Image>${splash.screen}</SplashScreen-Image>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -170,7 +169,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.copyright>2013-2017</project.copyright>
         <project.description>C/C++ Stack Trace Visualizer</project.description>
-        <project.entryPoint>${groupId}.${artifactId}.core.ApplicationCore</project.entryPoint>
+        <project.entryPoint>${project.groupId}.${project.artifactId}.core.ApplicationCore</project.entryPoint>
         <project.license>GNU General Public Licence v3</project.license>
         <project.poweredBy>Zest@Apache Software Foundation</project.poweredBy>
     </properties>
@@ -190,7 +189,7 @@
 		    <properties>
 		        <!-- Generic -->
 		        <build.phase>release</build.phase>
-		        <splash>theme/common/splash.png</splash>
+		        <splash.screen>theme/common/splash.png</splash.screen>
 		
 		        <!-- Log4j log levels (for third party) -->
 		        <log4j.thirdParty.level.full>trace</log4j.thirdParty.level.full>
@@ -217,7 +216,7 @@
 		    <properties>
 		        <!-- Generic -->
 		        <build.phase>development</build.phase>
-		        <splash>theme/common/splash.png</splash>
+		        <splash.screen>theme/common/splash.png</splash.screen>
 		
 		        <!-- Log4j log levels (for third party) -->
 		        <log4j.thirdParty.level.full>debug</log4j.thirdParty.level.full>

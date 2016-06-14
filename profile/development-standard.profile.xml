@@ -12,7 +12,7 @@
     <properties>
         <!-- Generic -->
         <build.phase>development</build.phase>
-        <splash>theme/common/splash.png</splash>
+        <splash.screen>theme/common/splash.png</splash.screen>
 
         <!-- Log4j log levels (for third party) -->
         <log4j.thirdParty.level.full>debug</log4j.thirdParty.level.full>

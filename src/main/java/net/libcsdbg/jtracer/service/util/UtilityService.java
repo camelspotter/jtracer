@@ -1,33 +1,22 @@
 package net.libcsdbg.jtracer.service.util;
 
-import net.libcsdbg.jtracer.annotation.Factory;
-import net.libcsdbg.jtracer.component.MainFrame;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.util.tools.Filter;
+import net.libcsdbg.jtracer.service.persistence.storage.FileSystemService;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
 import org.qi4j.api.injection.scope.Service;
-import org.qi4j.api.injection.scope.Structure;
 import org.qi4j.api.mixin.Mixins;
 import org.qi4j.api.service.ServiceComposite;
 import org.qi4j.api.service.ServiceReference;
-import org.qi4j.api.structure.Module;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.net.URL;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.jar.JarInputStream;
-import java.util.zip.ZipEntry;
 
 @Mixins(UtilityService.Mixin.class)
 @Activators(UtilityService.Activator.class)
@@ -36,8 +25,8 @@ public interface UtilityService extends ServiceComposite,
 {
 	public abstract class Mixin implements UtilityService
 	{
-		@Structure
-		protected Module selfContainer;
+		@Service
+		protected FileSystemService fileSystemSvc;
 
 		@Service
 		protected LoggerService loggerSvc;
@@ -73,49 +62,6 @@ public interface UtilityService extends ServiceComposite,
 					new ProcessBuilder().inheritIO()
 					                    .command(browser.trim(), url.toString())
 					                    .start();
-			}
-			catch (RuntimeException err) {
-				throw err;
-			}
-			catch (Throwable err) {
-				throw new RuntimeException(err);
-			}
-		}
-
-		@Factory(Factory.Type.COMPOSITE)
-		@Override
-		public Filter createFilter()
-		{
-			return selfContainer.newTransient(Filter.class);
-		}
-
-		@Override
-		public File createTemporaryDirectory(Boolean autoDelete, String... components)
-		{
-			try {
-				String path;
-				if (components.length > 0) {
-					path = String.join("_", components);
-				}
-
-				else {
-					path = registrySvc.get("name");
-					if (path == null) {
-						path = MainFrame.Config.name;
-					}
-
-					path = "." + path.trim();
-				}
-
-				File retval =
-						Files.createTempDirectory(path)
-						     .toFile();
-
-				if (autoDelete) {
-					retval.deleteOnExit();
-				}
-
-				return retval;
 			}
 			catch (RuntimeException err) {
 				throw err;
@@ -163,136 +109,6 @@ public interface UtilityService extends ServiceComposite,
 		}
 
 		@Override
-		public List<File> extractJar(File jar, File dir, JProgressBar progressBar)
-		{
-			List<File> retval = new ArrayList<>(Config.preallocSize);
-
-			/* If no directory is given, a random, temporary directory is created */
-			if (dir == null) {
-				dir = createTemporaryDirectory(false);
-			}
-
-			/* The first entry in the result list is the directory the jar is extracted in */
-			retval.add(dir);
-
-			/* If no jar is given, then a self-extracted jar is assumed */
-			boolean selfexec = false;
-			if (jar == null) {
-				selfexec = true;
-				String classpath = System.getProperty("java.class.path");
-
-				jar = new File(classpath);
-				if (!jar.exists() || !jar.canRead()) {
-					throw new RuntimeException("Failed to auto-detect the self-extracted jar file (classpath -> " + classpath + ")");
-				}
-			}
-
-			StringBuilder message = new StringBuilder(Config.preallocSize);
-			message.append("Java archive '")
-			       .append(jar.getAbsolutePath())
-			       .append("' ");
-
-			if (selfexec) {
-				message.append("(self-executable and self-extracted) ");
-			}
-
-			message.append("extracted in '")
-			       .append(dir.getAbsolutePath())
-			       .append("'");
-
-			loggerSvc.info(getClass(), message.toString());
-
-			try (JarInputStream in = new JarInputStream(new FileInputStream(jar))) {
-				float bytes = 0;
-				float size = jar.length();
-
-				if (progressBar != null) {
-					progressBar.setMinimum((int) bytes);
-					progressBar.setMaximum((int) size);
-				}
-
-				Filter filter = createFilter();
-				ZipEntry entry;
-				while ((entry = in.getNextEntry()) != null) {
-					File from = new File(entry.getName());
-					File to = new File(dir, entry.getName());
-
-					if (!filter.accept(from) || to.exists()) {
-						continue;
-					}
-
-					loggerSvc.debug(getClass(), "Deflating '" + from.getPath() + "' to '" + to.getCanonicalPath() + "'");
-					if (entry.isDirectory()) {
-						File subdir = dir;
-						for (String part : entry.getName().split(File.separator)) {
-							subdir = new File(subdir, part);
-
-							if (subdir.exists()) {
-								continue;
-							}
-
-							if (!subdir.mkdir()) {
-								throw new RuntimeException("Failed to create sub-directory '" + subdir.getAbsolutePath() + "'");
-							}
-
-							retval.add(subdir);
-							bytes += subdir.length();
-
-							if (progressBar != null) {
-								progressBar.setValue((int) bytes);
-								//progressBar.setValue((int) ((bytes / size) * 100));
-							}
-						}
-
-						loggerSvc.debug(getClass(), "Created sub-directory '" + subdir.getAbsolutePath() + "'");
-						continue;
-					}
-
-					retval.add(to);
-					if (!to.createNewFile()) {
-						throw new RuntimeException("Failed to create file '" + to.getAbsolutePath() + "'");
-					}
-
-					DataOutputStream out = new DataOutputStream(new FileOutputStream(to));
-					while (in.available() >= 1) {
-						int data = in.read();
-						if (data == -1) {
-							break;
-						}
-
-						out.writeByte(data);
-						bytes++;
-
-						if (progressBar != null) {
-							progressBar.setValue((int) bytes);
-							// progressBar.setValue((int) ((bytes / size) * 100));
-						}
-					}
-
-					out.close();
-				}
-
-				if (progressBar != null) {
-					progressBar.setValue((int) size);
-				}
-
-				return retval;
-			}
-			catch (RuntimeException err) {
-				throw err;
-			}
-			catch (Throwable err) {
-				throw new RuntimeException(err);
-			}
-		}
-
-		@Override
-		public File getHomeDirectory()
-		{
-			return FileSystemView.getFileSystemView().getHomeDirectory();
-		}
-
-		@Override
 		public List<Image> getProjectIcons()
 		{
 			List<Image> retval = new ArrayList<>(Config.iconSizes.length);
@@ -314,39 +130,7 @@ public interface UtilityService extends ServiceComposite,
 				path = path.replace("/", File.separator);
 			}
 
-			return new File(getResourcePrefix(), path);
-		}
-
-		@Override
-		public File getResourcePrefix()
-		{
-			try {
-				File retval =
-					new File(getClass().getProtectionDomain()
-					                   .getCodeSource()
-					                   .getLocation()
-					                   .toURI());
-
-				if (retval.isDirectory()) {
-					return retval;
-				}
-
-				return retval.getParentFile();
-			}
-			catch (RuntimeException err) {
-				throw err;
-			}
-			catch (Throwable err) {
-				throw new RuntimeException(err);
-			}
-		}
-
-		@Override
-		public Boolean isSelfExecutableJar()
-		{
-			return
-				System.getProperty("java.class.path")
-				      .equals(System.getProperty("sun.java.command"));
+			return new File(fileSystemSvc.getResourcePrefix(), path);
 		}
 
 		@Override
@@ -355,11 +139,11 @@ public interface UtilityService extends ServiceComposite,
 			StringBuilder path = new StringBuilder("theme/");
 
 			String theme = registrySvc.get("theme");
-			if (theme == null || theme.trim().length() == 0) {
+			if (theme == null || (theme = theme.trim()).length() == 0) {
 				path.append("default/");
 			}
 			else {
-				path.append(theme.trim())
+				path.append(theme)
 				    .append("/");
 			}
 
@@ -408,8 +192,6 @@ public interface UtilityService extends ServiceComposite,
 		public static class Config
 		{
 			public static Integer[] iconSizes = { 16, 24, 32, 48, 64, 128 };
-
-			public static Integer preallocSize = 128;
 		}
 	}
 
