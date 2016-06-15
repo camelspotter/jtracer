@@ -50,6 +50,18 @@ public class ProgressBar extends JProgressBar implements AutoInjectable
 		setStringPainted(true);
 	}
 
+	public ProgressBar complete(Integer millis)
+	{
+		try {
+			setValue(getMaximum());
+			Thread.sleep(millis);
+		}
+		catch (InterruptedException ignored) {
+		}
+
+		return this;
+	}
+
 	public ProgressBar delay(Long millis)
 	{
 		try {

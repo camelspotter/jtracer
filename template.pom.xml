@@ -172,6 +172,7 @@
         <project.entryPoint>${project.groupId}.${project.artifactId}.core.ApplicationCore</project.entryPoint>
         <project.license>GNU General Public Licence v3</project.license>
         <project.poweredBy>Zest@Apache Software Foundation</project.poweredBy>
+        <runtime.user>tasosp</runtime.user>
     </properties>
 
     <profiles>

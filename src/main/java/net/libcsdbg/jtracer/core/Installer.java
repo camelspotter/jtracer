@@ -2,7 +2,7 @@ package net.libcsdbg.jtracer.core;
 
 import net.libcsdbg.jtracer.component.MainFrame;
 import net.libcsdbg.jtracer.component.ProgressBar;
-import net.libcsdbg.jtracer.component.Splash;
+import net.libcsdbg.jtracer.component.SplashScreen;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.persistence.jar.JarService;
 import net.libcsdbg.jtracer.service.persistence.storage.FileSystemService;
@@ -49,6 +49,7 @@ public class Installer implements AutoInjectable
 			              .getHomeDirectory();
 
 		if (home.getAbsolutePath().endsWith("Desktop")) {
+			/* The call to home.getParentFile() may return null */
 			home = new File(home.getParent());
 		}
 
@@ -69,42 +70,6 @@ public class Installer implements AutoInjectable
 		installationNeeded = !installed && selfExecutableJar;
 	}
 
-	public Installer deleteRecursively(File dismissed)
-	{
-		if (!dismissed.isDirectory()) {
-			return deleteSingle(dismissed);
-		}
-
-		File[] listing = dismissed.listFiles();
-		if (listing == null || listing.length == 0) {
-			return deleteSingle(dismissed);
-		}
-
-		for (File f : listing) {
-			if (f.isDirectory()) {
-				deleteRecursively(f);
-			}
-			else {
-				deleteSingle(f);
-			}
-		}
-
-		return deleteSingle(dismissed);
-	}
-
-	public Installer deleteSingle(File dismissed)
-	{
-		if (!dismissed.exists()) {
-			return this;
-		}
-
-		else if (!dismissed.delete()) {
-			dismissed.deleteOnExit();
-		}
-
-		return this;
-	}
-
 	public Long estimateInstallationTaskSize()
 	{
 		if (jarSvc == null) {
@@ -114,8 +79,25 @@ public class Installer implements AutoInjectable
 		return executable.length() + jarSvc.getTotalUncompressedSize(executable);
 	}
 
+	/* todo Perform final, platform-specific installation steps (shortcuts, links, configurations e.t.c) */
 	public Installer finalizeInstallation()
 	{
+		File src = new File(prefix, "var/jTracer-1.04.desktop");
+		File dst = new File(home, "Desktop/jTracer-1.04.desktop");
+
+		if (fileSystemSvc == null) {
+			selfInject();
+		}
+
+		loggerSvc.debug(getClass(), "Copying '" + src.getAbsolutePath() + "' to '" + dst.getAbsolutePath() + "'");
+		try {
+			fileSystemSvc.copy(src, dst, null);
+		}
+		catch (Throwable err) {
+			loggerSvc.error(getClass(), "Failed copying '" + src.getAbsolutePath() + "' to '" + dst.getAbsolutePath() + "'");
+			loggerSvc.catching(getClass(), err);
+		}
+
 		return this;
 	}
 
@@ -134,38 +116,29 @@ public class Installer implements AutoInjectable
 		return prefix;
 	}
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public Installer install()
 	{
 		selfInject();
 
-		if (!prefix.mkdirs()) {
-			throw new RuntimeException("Failed to create the installation directory '" + prefix.getAbsolutePath() + "'");
+		prefix.mkdirs();
+		if (!fileSystemSvc.isAccessibleDirectory(prefix)) {
+			throw new RuntimeException("The installation directory '" + prefix.getAbsolutePath() + "' doesn't exist or isn't accessible");
 		}
 
-		Long taskSize = estimateInstallationTaskSize();
-
-		Splash splash = new Splash();
+		SplashScreen splash = new SplashScreen();
 		ProgressBar progressMonitor = splash.getProgress();
 		progressMonitor.setMinimum(0);
-		progressMonitor.setMaximum(taskSize.intValue());
+		progressMonitor.setMaximum(estimateInstallationTaskSize().intValue());
 
 		progressMonitor.setCaption("Copying");
-		File copied = new File(prefix, executable.getName());
-		fileSystemSvc.copy(executable, copied, progressMonitor);
+		fileSystemSvc.copy(executable, new File(prefix, executable.getName()), progressMonitor);
 
 		progressMonitor.setCaption("Installing");
 		jarSvc.extractAll(executable, prefix, progressMonitor);
 
-		try {
-			loggerSvc.debug(getClass(), progressMonitor.getValue() + " ~= " + taskSize);
-
-			progressMonitor.setCaption("Finalizing");
-			progressMonitor.setValue(taskSize.intValue());
-
-			Thread.sleep(Config.installationFinalizingDelay);
-		}
-		catch (InterruptedException ignored) {
-		}
+		progressMonitor.setCaption("Finalizing")
+		               .complete(Config.finalizingDelay);
 
 		splash.setVisible(false);
 		return this;
@@ -197,8 +170,7 @@ public class Installer implements AutoInjectable
 		logsPrefix.mkdirs();
 		logsPrefix.deleteOnExit();
 
-		String jarPath = executable.getAbsolutePath();
-		try (JarFile jar = new JarFile(jarPath, true)) {
+		try (JarFile jar = new JarFile(executable.getAbsolutePath(), true)) {
 			for (String name : Config.preInstallationFiles) {
 				JarEntry entry = jar.getJarEntry(name);
 				if (entry == null) {
@@ -249,24 +221,21 @@ public class Installer implements AutoInjectable
 
 	public Installer rollbackPreInstallation()
 	{
+		if (fileSystemSvc == null) {
+			selfInject();
+		}
+
 		for (String path : Config.preInstallationFiles) {
 			File target = new File(path);
 
 			while (target != null) {
-				deleteSingle(target);
+				fileSystemSvc.deleteSingle(target);
 				target = target.getParentFile();
 			}
 		}
 
 		for (String path : Config.scannedForRollback) {
-			File target = new File(path);
-
-			if (target.isDirectory()) {
-				deleteRecursively(target);
-			}
-			else {
-				deleteSingle(target);
-			}
+			fileSystemSvc.deleteRecursively(new File(path));
 		}
 
 		return this;
@@ -275,7 +244,7 @@ public class Installer implements AutoInjectable
 
 	public static class Config
 	{
-		public static Integer installationFinalizingDelay = 2000;
+		public static Integer finalizingDelay = 2000;
 
 		public static String[] preInstallationFiles = {
 			"theme/common/icon.png",

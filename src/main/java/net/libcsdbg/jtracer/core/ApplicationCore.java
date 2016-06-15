@@ -160,8 +160,7 @@ public class ApplicationCore implements AutoInjectable,
 		}
 
 		if (installer.isInstallationNeeded()) {
-			installer.rollbackPreInstallation()
-			         .finalizeInstallation();
+			installer.rollbackPreInstallation();
 		}
 
 		System.out.println(Config.farewell);
@@ -179,7 +178,8 @@ public class ApplicationCore implements AutoInjectable,
 		selfInject();
 
 		if (installer.isInstallationNeeded()) {
-			installer.install();
+			installer.install()
+			         .finalizeInstallation();
 		}
 
 		try {

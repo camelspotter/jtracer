@@ -134,6 +134,42 @@ public interface FileSystemService extends FileSystemServiceApi,
 			}
 		}
 
+		public FileSystemService deleteRecursively(File file)
+		{
+			if (!file.isDirectory()) {
+				return deleteSingle(file);
+			}
+
+			File[] listing = file.listFiles();
+			if (listing == null || listing.length == 0) {
+				return deleteSingle(file);
+			}
+
+			for (File f : listing) {
+				if (f.isDirectory()) {
+					deleteRecursively(f);
+				}
+				else {
+					deleteSingle(f);
+				}
+			}
+
+			return deleteSingle(file);
+		}
+
+		public FileSystemService deleteSingle(File file)
+		{
+			if (!file.exists()) {
+				return this;
+			}
+
+			else if (!file.delete()) {
+				file.deleteOnExit();
+			}
+
+			return this;
+		}
+
 		@Override
 		public File getHomeDirectory()
 		{
@@ -173,6 +209,16 @@ public interface FileSystemService extends FileSystemServiceApi,
 			catch (Throwable err) {
 				throw new RuntimeException(err);
 			}
+		}
+
+		@Override
+		public Boolean isAccessibleDirectory(File dir)
+		{
+			return
+				dir.exists() &&
+				dir.canRead() &&
+				dir.canExecute() &&
+				dir.isDirectory();
 		}
 
 		@Override

@@ -16,9 +16,15 @@ public interface FileSystemServiceApi extends FileSystemServiceState
 
 	File createTemporaryDirectory(Boolean autoDelete, String... components);
 
+	FileSystemService deleteRecursively(File file);
+
+	FileSystemService deleteSingle(File file);
+
 	File getHomeDirectory();
 
 	File getResourcePrefix();
+
+	Boolean isAccessibleDirectory(File dir);
 
 	FileSystemService passivate();
 

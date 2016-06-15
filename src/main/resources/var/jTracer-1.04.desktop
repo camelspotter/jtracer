@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=${project.name}-${project.version}
+Comment=${project.description}
+Exec=java -jar /home/${runtime.user}/.jTracer/jTracer-1.04.jar
+Icon=/home/${runtime.user}/.jTracer/theme/common/icon.png
+Path=/home/${runtime.user}/.jTracer
+Terminal=false
+StartupNotify=false
+GenericName=

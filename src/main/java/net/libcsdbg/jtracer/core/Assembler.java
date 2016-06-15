@@ -102,7 +102,7 @@ public class Assembler implements ApplicationAssembler
 		               MainFrame.class,
 		               MenuBar.class,
 		               Session.class,
-		               Splash.class,
+		               SplashScreen.class,
 		               StatusBar.class,
 		               ToolBar.class,
 		               TraceStatusBar.class,

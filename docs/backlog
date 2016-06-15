@@ -8,4 +8,5 @@ D {
     Create alternative themes
     Print dates using Locale
     Infinite keep-alive timeout
+    Perform final, platform-specific installation steps (shortcuts, links, configurations e.t.c)
 }

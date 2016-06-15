@@ -7,7 +7,7 @@ import org.qi4j.api.injection.scope.Service;
 import javax.swing.*;
 import java.awt.*;
 
-public class Splash extends JDialog implements AutoInjectable
+public class SplashScreen extends JDialog implements AutoInjectable
 {
 	private static final long serialVersionUID = -1203622404963547880L;
 
@@ -19,7 +19,7 @@ public class Splash extends JDialog implements AutoInjectable
 	protected final ProgressBar progress;
 
 
-	public Splash()
+	public SplashScreen()
 	{
 		super();
 		selfInject();
@@ -47,6 +47,7 @@ public class Splash extends JDialog implements AutoInjectable
 			setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 			pack();
 
+			setAlwaysOnTop(true);
 			setLocationRelativeTo(null);
 			setVisible(true);
 		}
