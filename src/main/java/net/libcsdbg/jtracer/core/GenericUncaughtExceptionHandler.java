@@ -42,7 +42,8 @@ public class GenericUncaughtExceptionHandler implements AutoInjectable,
 		       .append("' (")
 		       .append(thrower.getId())
 		       .append(", ")
-		       .append(thrower.getState().name())
+		       .append(thrower.getState()
+		                      .name())
 		       .append(") ->")
 
 		       .append(tab(1))
@@ -56,8 +57,7 @@ public class GenericUncaughtExceptionHandler implements AutoInjectable,
 		       .append(tab(1))
 		       .append("Trace ->");
 
-		Arrays.asList(err.getStackTrace())
-		      .stream()
+		Arrays.stream(err.getStackTrace())
 		      .map(StackTraceElement::toString)
 		      .forEach(e -> message.append(tab(2))
 		                           .append(e));

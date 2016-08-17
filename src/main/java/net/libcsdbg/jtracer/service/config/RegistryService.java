@@ -127,12 +127,7 @@ public interface RegistryService extends RegistryServiceApi,
 				ApplicationCore.getCurrentApplicationCore()
 				               .getApplicationProperties();
 
-			Map<String, String> map = new HashMap<>(properties.size());
-			for (String key : properties.getPropertyNames()) {
-				map.put(key, properties.getProperty(key));
-			}
-
-			options().set(map);
+			options().set(properties.getPropertyMap());
 			source().set(properties.getSource());
 
 			return this;

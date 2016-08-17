@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=${project.build.finalName}
+Comment=${project.description}
+Exec=java -jar ~/.${project.name}/${project.build.finalName}.jar
+Icon=~/.${project.name}/theme/common/icon.png
+Path=~/.${project.name}
+Terminal=false
+StartupNotify=false
+GenericName=

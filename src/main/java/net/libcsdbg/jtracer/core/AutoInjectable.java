@@ -46,6 +46,16 @@ public interface AutoInjectable
 		return application().findModule(layer, module);
 	}
 
+	public default Module module(String layer, String module)
+	{
+		return application().findModule(layer, module);
+	}
+
+	public default Module module(Layer layer, String module)
+	{
+		return application().findModule(layer.name(), module);
+	}
+
 	public default AutoInjectable selfInject(Object... injected)
 	{
 		return selfInject(module(), injected);
@@ -59,11 +69,11 @@ public interface AutoInjectable
 
 	public default AutoInjectable selfInject(String layer, String module, Object... injected)
 	{
-		return selfInject(application().findModule(layer, module), injected);
+		return selfInject(module(layer, module), injected);
 	}
 
 	public default AutoInjectable selfInject(Layer layer, String module, Object... injected)
 	{
-		return selfInject(application().findModule(layer.name(), module), injected);
+		return selfInject(module(layer, module), injected);
 	}
 }

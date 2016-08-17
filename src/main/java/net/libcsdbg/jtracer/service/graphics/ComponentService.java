@@ -74,8 +74,7 @@ public interface ComponentService extends ComponentServiceApi,
 		{
 			String[] parts = getProperty(widget + "-size").split(",");
 			List<Integer> axes =
-				Arrays.asList(parts)
-				      .stream()
+				Arrays.stream(parts)
 				      .map(String::trim)
 				      .map(Integer::parseInt)
 				      .collect(Collectors.toList());
@@ -110,9 +109,7 @@ public interface ComponentService extends ComponentServiceApi,
 
 			int retval = 0;
 			for (String style : getProperty(key).split(",")) {
-				style =
-					style.trim()
-					     .toLowerCase();
+				style = style.trim().toLowerCase();
 
 				switch (style) {
 				case "plain":
@@ -148,8 +145,7 @@ public interface ComponentService extends ComponentServiceApi,
 		{
 			String[] parts = getProperty(widget + "-grid-presets").split(",");
 			List<Integer> offsets =
-				Arrays.asList(parts)
-				      .stream()
+				Arrays.stream(parts)
 				      .map(String::trim)
 				      .map(Integer::parseInt)
 				      .collect(Collectors.toList());
@@ -181,8 +177,7 @@ public interface ComponentService extends ComponentServiceApi,
 		{
 			String[] parts = getProperty(widget + "-insets").split(",");
 			List<Integer> margins =
-				Arrays.asList(parts)
-				      .stream()
+				Arrays.stream(parts)
 				      .map(String::trim)
 				      .map(Integer::parseInt)
 				      .collect(Collectors.toList());

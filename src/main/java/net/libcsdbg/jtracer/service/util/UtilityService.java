@@ -1,5 +1,9 @@
 package net.libcsdbg.jtracer.service.util;
 
+import net.libcsdbg.jtracer.gui.container.Alert;
+import net.libcsdbg.jtracer.gui.container.MainFrame;
+import net.libcsdbg.jtracer.core.ApplicationCore;
+import net.libcsdbg.jtracer.core.GenericUncaughtExceptionHandler;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.persistence.storage.FileSystemService;
@@ -16,9 +20,10 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
-@Mixins(UtilityService.Mixin.class)
+@Mixins({ UtilityService.Mixin.class, PlatformDetector.class })
 @Activators(UtilityService.Activator.class)
 public interface UtilityService extends ServiceComposite,
                                         UtilityServiceApi
@@ -52,8 +57,13 @@ public interface UtilityService extends ServiceComposite,
 		@Override
 		public Process browse(URL url)
 		{
+			String browser = registrySvc.get("browser");
+
+			MainFrame rootFrame =
+				ApplicationCore.getCurrentApplicationCore()
+				               .getRootFrame();
+
 			try {
-				String browser = registrySvc.get("browser");
 				if (browser == null) {
 					throw new RuntimeException("No browser configuration found");
 				}
@@ -64,9 +74,11 @@ public interface UtilityService extends ServiceComposite,
 					                    .start();
 			}
 			catch (RuntimeException err) {
+				Alert.error(rootFrame, err.getMessage(), false);
 				throw err;
 			}
 			catch (Throwable err) {
+				Alert.error(rootFrame, "Unable to launch browser program '" + browser + "'", false);
 				throw new RuntimeException(err);
 			}
 		}
@@ -75,8 +87,16 @@ public interface UtilityService extends ServiceComposite,
 		public Process execute(String workingDir, String executable, Boolean async, String... args)
 		{
 			try {
-				List<String> cmd = new ArrayList<>();
-				cmd.add("." + File.separator + executable);
+				List<String> cmd = new LinkedList<>();
+
+				if (workingDir == null) {
+					workingDir = ".";
+					cmd.add(executable);
+				}
+				else {
+					cmd.add("." + File.separator + executable);
+				}
+
 				if (args.length > 0) {
 					Collections.addAll(cmd, args);
 				}
@@ -106,6 +126,28 @@ public interface UtilityService extends ServiceComposite,
 			catch (Throwable err) {
 				throw new RuntimeException(err);
 			}
+		}
+
+		@Override
+		public Thread fork(Runnable task, String name, Boolean start)
+		{
+			ThreadGroup group =
+				Thread.currentThread()
+				      .getThreadGroup();
+
+			GenericUncaughtExceptionHandler handler =
+				ApplicationCore.getCurrentApplicationCore()
+				               .getUncaughtExceptionHandler();
+
+			Thread retval = new Thread(group, task, name);
+			retval.setDaemon(true);
+			retval.setUncaughtExceptionHandler(handler);
+
+			if (start) {
+				retval.start();
+			}
+
+			return retval;
 		}
 
 		@Override
@@ -156,8 +198,13 @@ public interface UtilityService extends ServiceComposite,
 		@Override
 		public Process mailTo(URL url)
 		{
+			String mailer = registrySvc.get("mailer");
+
+			MainFrame rootFrame =
+				ApplicationCore.getCurrentApplicationCore()
+				               .getRootFrame();
+
 			try {
-				String mailer = registrySvc.get("mailer");
 				if (mailer == null) {
 					throw new RuntimeException("No mailer configuration found");
 				}
@@ -168,9 +215,11 @@ public interface UtilityService extends ServiceComposite,
 					                    .start();
 			}
 			catch (RuntimeException err) {
+				Alert.error(rootFrame, err.getMessage(), false);
 				throw err;
 			}
 			catch (Throwable err) {
+				Alert.error(rootFrame, "Unable to launch mailer program '" + mailer + "'", false);
 				throw new RuntimeException(err);
 			}
 		}

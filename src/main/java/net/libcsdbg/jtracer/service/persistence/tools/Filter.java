@@ -5,7 +5,8 @@ import org.qi4j.api.composite.TransientComposite;
 import org.qi4j.api.mixin.Mixins;
 
 @Mixins(Filter.Mixin.class)
-public interface Filter extends TransientComposite
+public interface Filter extends FilterState,
+                                TransientComposite
 {
 	<T> Boolean accept(T entry);
 

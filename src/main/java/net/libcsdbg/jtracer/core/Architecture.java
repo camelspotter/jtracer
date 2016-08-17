@@ -1,5 +1,6 @@
 package net.libcsdbg.jtracer.core;
 
+import net.libcsdbg.jtracer.annotation.Factory;
 import org.qi4j.api.composite.TransientComposite;
 import org.qi4j.api.service.ServiceComposite;
 import org.qi4j.api.structure.ApplicationDescriptor;
@@ -11,7 +12,7 @@ import java.util.*;
 
 public class Architecture
 {
-	protected ApplicationDetailDescriptor rootModel;
+	protected final ApplicationDetailDescriptor rootModel;
 
 	protected final Map<LayerDetailDescriptor, List<ModuleDetailDescriptor>> structure;
 
@@ -26,7 +27,7 @@ public class Architecture
 
 	protected static <T> List<T> asList(Iterable<T> source)
 	{
-		List<T> retval = new ArrayList<>();
+		List<T> retval = new LinkedList<>();
 		source.forEach(retval::add);
 		return retval;
 	}
@@ -199,13 +200,13 @@ public class Architecture
 		return modules.size() == 1;
 	}
 
-	public LayerDetailDescriptor layer(String layerName)
+	public LayerDetailDescriptor layer(String name)
 	{
 		LayerDetailDescriptor layer =
 			layers().stream()
 			        .filter(l -> l.descriptor()
 			                      .name()
-			                      .equals(layerName))
+			                      .equals(name))
 			        .findFirst()
 			        .orElse(null);
 
@@ -213,7 +214,7 @@ public class Architecture
 			return layer;
 		}
 
-		throw new RuntimeException("Layer '" + layerName + "' not found in application '" + rootModel.descriptor().name() + "'");
+		throw new RuntimeException("Layer '" + name + "' not found in application '" + rootModel.descriptor().name() + "'");
 	}
 
 	public List<LayerDetailDescriptor> layers()
@@ -221,31 +222,31 @@ public class Architecture
 		return asList(rootModel.layers());
 	}
 
-	public ModuleDetailDescriptor module(String layerName, String moduleName)
+	public ModuleDetailDescriptor module(String layer, String name)
 	{
 		ModuleDetailDescriptor module =
-			modules(layerName).stream()
-			                  .filter(m -> m.descriptor()
-			                                .name()
-			                                .equals(moduleName))
-			                  .findFirst()
-			                  .orElse(null);
+			modules(layer).stream()
+			              .filter(m -> m.descriptor()
+			                            .name()
+			                            .equals(name))
+			              .findFirst()
+			              .orElse(null);
 
 		if (module != null) {
 			return module;
 		}
 
-		throw new RuntimeException("Module '" + moduleName + "' not found in layer '" + layerName + "'");
+		throw new RuntimeException("Module '" + name + "' not found in layer '" + layer + "'");
 	}
 
-	public ModuleDetailDescriptor module(LayerDetailDescriptor layer, String moduleName)
+	public ModuleDetailDescriptor module(LayerDetailDescriptor layer, String name)
 	{
-		return module(layer.descriptor().name(), moduleName);
+		return module(layer.descriptor().name(), name);
 	}
 
-	public List<ModuleDetailDescriptor> modules(String layerName)
+	public List<ModuleDetailDescriptor> modules(String layer)
 	{
-		return asList(layer(layerName).modules());
+		return asList(layer(layer).modules());
 	}
 
 	public List<ModuleDetailDescriptor> modules(LayerDetailDescriptor layer)
@@ -253,9 +254,9 @@ public class Architecture
 		return asList(layer.modules());
 	}
 
-	public List<ObjectDetailDescriptor> objects(String layerName, String moduleName)
+	public List<ObjectDetailDescriptor> objects(String layer, String name)
 	{
-		return asList(module(layerName, moduleName).objects());
+		return asList(module(layer, name).objects());
 	}
 
 	public List<ObjectDetailDescriptor> objects(ModuleDetailDescriptor module)
@@ -263,9 +264,9 @@ public class Architecture
 		return asList(module.objects());
 	}
 
-	public List<ServiceDetailDescriptor> services(String layerName, String moduleName)
+	public List<ServiceDetailDescriptor> services(String layer, String name)
 	{
-		return asList(module(layerName, moduleName).services());
+		return asList(module(layer, name).services());
 	}
 
 	public List<ServiceDetailDescriptor> services(ModuleDetailDescriptor module)
@@ -278,9 +279,9 @@ public class Architecture
 		return structure;
 	}
 
-	public List<TransientDetailDescriptor> transients(String layerName, String moduleName)
+	public List<TransientDetailDescriptor> transients(String layer, String name)
 	{
-		return asList(module(layerName, moduleName).transients());
+		return asList(module(layer, name).transients());
 	}
 
 	public List<TransientDetailDescriptor> transients(ModuleDetailDescriptor module)
@@ -288,9 +289,9 @@ public class Architecture
 		return asList(module.transients());
 	}
 
-	public List<ValueDetailDescriptor> values(String layerName, String moduleName)
+	public List<ValueDetailDescriptor> values(String layer, String name)
 	{
-		return asList(module(layerName, moduleName).values());
+		return asList(module(layer, name).values());
 	}
 
 	public List<ValueDetailDescriptor> values(ModuleDetailDescriptor module)
@@ -298,6 +299,7 @@ public class Architecture
 		return asList(module.values());
 	}
 
+	@Factory(Factory.Type.POJO)
 	public Envisage visualize()
 	{
 		Envisage gui = new Envisage();

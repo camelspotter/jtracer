@@ -1,11 +1,12 @@
 package net.libcsdbg.jtracer.core;
 
+import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.Note;
-import net.libcsdbg.jtracer.component.Alert;
-import net.libcsdbg.jtracer.component.MainFrame;
-import net.libcsdbg.jtracer.service.config.RegistryService;
+import net.libcsdbg.jtracer.gui.container.Alert;
+import net.libcsdbg.jtracer.gui.container.MainFrame;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.util.UtilityService;
+import net.libcsdbg.jtracer.setup.Installer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.qi4j.api.injection.scope.Service;
@@ -31,9 +32,6 @@ public class ApplicationCore implements AutoInjectable,
 
 	@Service
 	protected LoggerService loggerSvc;
-
-	@Service
-	protected RegistryService registrySvc;
 
 	@Service
 	protected UtilityService utilitySvc;
@@ -97,7 +95,8 @@ public class ApplicationCore implements AutoInjectable,
 		return installer;
 	}
 
-	@Note("Root logger is eagerly initialized")
+	@Factory(Factory.Type.POJO)
+	@Note("The root logger is eagerly initialized")
 	public static Logger getRootLogger()
 	{
 		if (rootLogger == null) {
@@ -127,6 +126,7 @@ public class ApplicationCore implements AutoInjectable,
 			core =
 				new ApplicationCore(propertiesSource)
 					.activate()
+					.parseCommandLineArguments(args)
 					.registerThreadUncaughtExceptionHandlers()
 					.obtainGlobalLock()
 					.launchGui();
@@ -179,7 +179,7 @@ public class ApplicationCore implements AutoInjectable,
 
 		if (installer.isInstallationNeeded()) {
 			installer.install()
-			         .finalizeInstallation();
+			         .osSpecificInstallation();
 		}
 
 		try {
@@ -217,6 +217,12 @@ public class ApplicationCore implements AutoInjectable,
 		return architecture;
 	}
 
+	public final MainFrame getRootFrame()
+	{
+		return gui;
+	}
+
+	@Factory(Factory.Type.POJO)
 	@Note("Lazily initialized")
 	public GenericUncaughtExceptionHandler getUncaughtExceptionHandler()
 	{
@@ -229,6 +235,7 @@ public class ApplicationCore implements AutoInjectable,
 
 	protected ApplicationCore installShutdownHook()
 	{
+		@Note("The only case of logging unrestricted of the dynamic log level")
 		Runnable hook = () -> {
 			synchronized (this) {
 				try {
@@ -236,28 +243,19 @@ public class ApplicationCore implements AutoInjectable,
 						return;
 					}
 
+					active = false;
 					application.passivate();
 
-					/* The only case of log unrestricted of the dynamic log level */
 					getRootLogger().debug("Application '" + application.name() + "' asynchronously passivated");
 				}
 				catch (Throwable err) {
+					getRootLogger().debug("Application '" + application.name() + "' failed to passivate asynchronously");
 					getRootLogger().catching(err);
-				}
-				finally {
-					active = false;
 				}
 			}
 		};
 
-		ThreadGroup group =
-			Thread.currentThread()
-			      .getThreadGroup();
-
-		Thread runner = new Thread(group, hook, Config.shutdownHookName);
-		runner.setDaemon(true);
-		runner.setUncaughtExceptionHandler(getUncaughtExceptionHandler());
-
+		Thread runner = utilitySvc.fork(hook, Config.shutdownHookName, false);
 		Runtime.getRuntime()
 		       .addShutdownHook(runner);
 
@@ -267,7 +265,7 @@ public class ApplicationCore implements AutoInjectable,
 	protected ApplicationCore launchGui()
 	{
 		try {
-			UIManager.setLookAndFeel(properties.getProperty("lnf"));
+			UIManager.setLookAndFeel(properties.getMandatoryProperty("lnf"));
 		}
 		catch (Throwable ignored) {
 		}
@@ -282,7 +280,7 @@ public class ApplicationCore implements AutoInjectable,
 	protected ApplicationCore obtainGlobalLock()
 	{
 		try {
-			String path = properties.getProperty("lock-file");
+			String path = properties.getMandatoryProperty("lock-file");
 			File lockFile = utilitySvc.getResource(path);
 
 			globalLock =
@@ -304,6 +302,28 @@ public class ApplicationCore implements AutoInjectable,
 		}
 	}
 
+	protected ApplicationCore parseCommandLineArguments(String... args)
+	{
+		for (int i = 1; i < args.length; i++) {
+			String arg = args[i].trim();
+
+			switch (arg) {
+			case "--log-properties":
+				properties.logProperties(getRootLogger());
+				break;
+
+			case "--dump-properties":
+				properties.dumpProperties(System.out);
+				break;
+
+			default:
+				getRootLogger().warn("Unmapped CLI argument '" + arg + "'");
+			}
+		}
+
+		return this;
+	}
+
 	protected synchronized ApplicationCore passivate()
 	{
 		if (!active) {
@@ -319,13 +339,12 @@ public class ApplicationCore implements AutoInjectable,
 		}
 		catch (Throwable ignored) {
 		}
-		finally {
-			globalLock = null;
-		}
 
+		globalLock = null;
 		ApplicationCore.detachCurrent();
 
 		try {
+			active = false;
 			application.passivate();
 			return this;
 		}
@@ -334,9 +353,6 @@ public class ApplicationCore implements AutoInjectable,
 		}
 		catch (Throwable err) {
 			throw new RuntimeException(err);
-		}
-		finally {
-			active = false;
 		}
 	}
 
@@ -362,9 +378,10 @@ public class ApplicationCore implements AutoInjectable,
 			message.append(t.getName())
 			       .append("' (id ")
 			       .append(t.getId())
+			       .append(", state ")
+			       .append(t.getState().name())
 			       .append(", group ")
-			       .append(t.getThreadGroup()
-			                .getName())
+			       .append(t.getThreadGroup().getName())
 			       .append(")");
 
 			loggerSvc.info(getClass(), message.toString());

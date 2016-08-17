@@ -1,12 +1,12 @@
 package net.libcsdbg.jtracer.core;
 
+import org.apache.logging.log4j.Logger;
 import org.qi4j.api.structure.Application;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.io.PrintStream;
+import java.util.*;
 
 public class ApplicationProperties
 {
@@ -24,22 +24,38 @@ public class ApplicationProperties
 		}
 
 		this.source = source.trim();
-		try (InputStream istream = getClass().getClassLoader().getResourceAsStream(source)) {
+
+		InputStream actual = null;
+		try {
+			actual = new FileInputStream(source);
+		}
+		catch (Throwable err) {
+			err.printStackTrace();
+		}
+
+		try (InputStream istream = (actual != null) ? actual : getClass().getClassLoader().getResourceAsStream(source)) {
 			properties.load(istream);
 		}
-		catch (Throwable ignored) {
+		catch (Throwable err) {
+			err.printStackTrace();
 		}
 	}
 
-	public static void dumpSystemProperties()
+	public static void dumpSystemProperties(PrintStream out)
 	{
 		System.getProperties()
-		      .list(System.out);
+		      .list(out);
+	}
+
+	public ApplicationProperties dumpProperties(PrintStream out)
+	{
+		properties.list(out);
+		return this;
 	}
 
 	public String getApplicationFullName()
 	{
-		return getProperty(Config.fullNameParam);
+		return getMandatoryProperty(Config.fullNameParam);
 	}
 
 	public Application.Mode getApplicationMode()
@@ -48,32 +64,40 @@ public class ApplicationProperties
 			return Application.Mode.staging;
 		}
 
-		else if (isReleaseBuild()) {
+		if (isReleaseBuild()) {
 			return Application.Mode.production;
 		}
 
-		else if (isTestBuild()) {
+		if (isTestBuild()) {
 			return Application.Mode.test;
 		}
 
-		else {
-			return Application.Mode.development;
-		}
+		return Application.Mode.development;
 	}
 
 	public String getApplicationName()
 	{
-		return getProperty(Config.nameParam);
+		return getMandatoryProperty(Config.nameParam);
 	}
 
 	public String getApplicationVersion()
 	{
-		return getProperty(Config.versionParam);
+		return getMandatoryProperty(Config.versionParam);
 	}
 
 	public String getBuildPhase()
 	{
-		return getProperty(Config.buildPhaseParam);
+		return getMandatoryProperty(Config.buildPhaseParam);
+	}
+
+	public String getMandatoryProperty(String property)
+	{
+		String value = getProperty(property);
+		if (value == null) {
+			throw new RuntimeException("No configuration found for key '" + property + "'");
+		}
+
+		return value;
 	}
 
 	public final Properties getProperties()
@@ -91,24 +115,33 @@ public class ApplicationProperties
 		return property;
 	}
 
+	public Map<String, String> getPropertyMap()
+	{
+		Map<String, String> retval = new HashMap<>(properties.size());
+
+		properties.stringPropertyNames()
+		          .stream()
+		          .forEach(k -> retval.put(k, properties.getProperty(k)));
+
+		return retval;
+	}
+
 	public Set<String> getPropertyNames()
 	{
-		return
-			properties.stringPropertyNames()
-			          .stream()
-			          .map(String::trim)
-			          .collect(Collectors.toSet());
+		return properties.stringPropertyNames();
 	}
 
 	public Set<String> getPropertyValues()
 	{
 		Set<String> retval = new HashSet<>(properties.size());
+
 		for (Object value : properties.values()) {
 			if (value instanceof String) {
 				retval.add(((String) value).trim());
 			}
 			else {
-				retval.add(value.toString().trim());
+				retval.add(value.toString()
+				                .trim());
 			}
 		}
 
@@ -123,17 +156,21 @@ public class ApplicationProperties
 	public Boolean isContinuousIntegrationBuild()
 	{
 		String phase = getBuildPhase();
-		return phase != null &&
-		       phase.toLowerCase()
-		            .equals("ci");
+
+		return
+			phase != null &&
+			phase.toLowerCase()
+			     .equals("ci");
 	}
 
 	public Boolean isDevelopmentBuild()
 	{
 		String phase = getBuildPhase();
-		return phase != null &&
-		       phase.toLowerCase()
-		            .equals("development");
+
+		return
+			phase != null &&
+			phase.toLowerCase()
+			     .equals("development");
 	}
 
 	public Boolean isEnabled(String property)
@@ -144,10 +181,11 @@ public class ApplicationProperties
 		}
 
 		param = param.toLowerCase();
-		return param.equals("true") ||
-		       param.equals("yes") ||
-		       param.equals("on") ||
-		       param.equals("1");
+		return
+			param.equals("true") ||
+			param.equals("yes") ||
+			param.equals("on") ||
+			param.equals("1");
 	}
 
 	public Boolean isPropertyEqual(String property, String value)
@@ -165,17 +203,37 @@ public class ApplicationProperties
 	public Boolean isReleaseBuild()
 	{
 		String phase = getBuildPhase();
-		return phase != null &&
-		       phase.toLowerCase()
-		            .equals("release");
+
+		return
+			phase != null &&
+			phase.toLowerCase()
+			     .equals("release");
 	}
 
 	public Boolean isTestBuild()
 	{
 		String phase = getBuildPhase();
-		return phase != null &&
-		       phase.toLowerCase()
-		            .equals("testing");
+
+		return
+			phase != null &&
+			phase.toLowerCase()
+			     .equals("testing");
+	}
+
+	public ApplicationProperties logProperties(Logger logger)
+	{
+		StringBuilder listing = new StringBuilder("Property listing (sourced from '" + source + "') ->");
+
+		getPropertyNames()
+			.stream()
+			.sorted(String::compareTo)
+			.forEach(n -> listing.append("\n\t")
+			                     .append(n)
+			                     .append(" -> ")
+			                     .append(getProperty(n)));
+
+		logger.info(listing.toString());
+		return this;
 	}
 
 	public Integer size()

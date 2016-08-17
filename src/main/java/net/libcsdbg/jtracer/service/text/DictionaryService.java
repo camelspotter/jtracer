@@ -20,8 +20,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 @Mixins(DictionaryService.Mixin.class)
@@ -105,7 +105,7 @@ public interface DictionaryService extends DictionaryServiceApi,
 		public DictionaryService loadDictionary(String name)
 		{
 			try (BufferedReader reader = getDictionaryReader(name)) {
-				List<String> words = new ArrayList<>();
+				List<String> words = new LinkedList<>();
 				while (true) {
 					String line = reader.readLine();
 					if (line == null) {

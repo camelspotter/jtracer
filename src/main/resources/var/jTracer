@@ -1,0 +1,5 @@
+#!/bin/sh
+
+java -jar ~/.${project.name}/${project.build.finalName}.jar
+
+exit $?

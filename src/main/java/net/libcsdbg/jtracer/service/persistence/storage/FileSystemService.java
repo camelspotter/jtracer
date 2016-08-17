@@ -2,15 +2,15 @@ package net.libcsdbg.jtracer.service.persistence.storage;
 
 import net.libcsdbg.jtracer.annotation.Factory;
 import net.libcsdbg.jtracer.annotation.MixinNote;
-import net.libcsdbg.jtracer.component.MainFrame;
-import net.libcsdbg.jtracer.component.ProgressBar;
+import net.libcsdbg.jtracer.gui.container.MainFrame;
+import net.libcsdbg.jtracer.gui.component.ProgressBar;
 import net.libcsdbg.jtracer.core.ApplicationCore;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.log.LoggerService;
-import net.libcsdbg.jtracer.service.persistence.tools.FileFilter;
+import net.libcsdbg.jtracer.service.persistence.tools.Filter;
 import org.qi4j.api.activation.ActivatorAdapter;
 import org.qi4j.api.activation.Activators;
-import org.qi4j.api.common.Optional;
+import org.qi4j.api.composite.TransientBuilder;
 import org.qi4j.api.injection.scope.Service;
 import org.qi4j.api.injection.scope.Structure;
 import org.qi4j.api.mixin.Mixins;
@@ -57,27 +57,41 @@ public interface FileSystemService extends FileSystemServiceApi,
 			return this;
 		}
 
-		@Override
-		public FileSystemService copy(File src, File dst, @Optional ProgressBar progressMonitor)
+		protected Byte[] box(byte[] buffer)
 		{
-			int start = (progressMonitor == null) ? 0 : progressMonitor.getValue();
+			Byte[] retval = new Byte[buffer.length];
+			for (int i = 0; i < buffer.length; i++) {
+				retval[i] = buffer[i];
+			}
 
-			try (InputStream in = new FileInputStream(src);
-			     DataOutputStream out = new DataOutputStream(new FileOutputStream(dst))) {
-				while (in.available() > 0) {
-					int data = in.read();
-					if (data == -1) {
+			return retval;
+		}
+
+		@Override
+		public FileSystemService copy(File from, File to, ProgressBar progressMonitor)
+		{
+			byte[] chunk = new byte[Config.chunkSize];
+
+			int offset = (progressMonitor == null) ? 0 : progressMonitor.getValue();
+			int size = (int) from.length();
+
+			try (InputStream in = new FileInputStream(from);
+			     DataOutputStream out = new DataOutputStream(new FileOutputStream(to))) {
+
+				while (size > 0 && in.available() > 0) {
+					int bytesToRead = (Config.chunkSize > size) ? size : Config.chunkSize;
+
+					int bytesRead = in.read(chunk, 0, bytesToRead);
+					if (bytesRead == -1) {
 						break;
 					}
 
-					out.writeByte(data);
+					out.write(chunk, 0, bytesRead);
+					size -= bytesRead;
 
 					if (progressMonitor != null) {
-						start++;
-
-						if (start % 10 == 0) {
-							progressMonitor.setValue(start);
-						}
+						offset += bytesRead;
+						progressMonitor.setValue(offset);
 					}
 				}
 
@@ -93,9 +107,15 @@ public interface FileSystemService extends FileSystemServiceApi,
 
 		@Factory(Factory.Type.COMPOSITE)
 		@Override
-		public FileFilter createFileFilter()
+		public Filter createFileFilter(Class<? extends Filter> type)
 		{
-			return selfContainer.newTransient(FileFilter.class);
+			TransientBuilder<? extends Filter> builder = selfContainer.newTransientBuilder(type);
+
+			builder.prototype()
+			       .type()
+			       .set(type);
+
+			return builder.newInstance();
 		}
 
 		@Override
@@ -108,12 +128,7 @@ public interface FileSystemService extends FileSystemServiceApi,
 				}
 
 				else {
-					path = registrySvc.get("name");
-					if (path == null) {
-						path = MainFrame.Config.name;
-					}
-
-					path = "." + path.trim();
+					path = "." + registrySvc.getOrDefault("name", MainFrame.Config.name).trim();
 				}
 
 				File retval =
@@ -134,6 +149,7 @@ public interface FileSystemService extends FileSystemServiceApi,
 			}
 		}
 
+		@Override
 		public FileSystemService deleteRecursively(File file)
 		{
 			if (!file.isDirectory()) {
@@ -157,6 +173,7 @@ public interface FileSystemService extends FileSystemServiceApi,
 			return deleteSingle(file);
 		}
 
+		@Override
 		public FileSystemService deleteSingle(File file)
 		{
 			if (!file.exists()) {
@@ -173,9 +190,16 @@ public interface FileSystemService extends FileSystemServiceApi,
 		@Override
 		public File getHomeDirectory()
 		{
-			return
+			File home =
 				FileSystemView.getFileSystemView()
 				              .getHomeDirectory();
+
+			if (home.getAbsolutePath().endsWith("Desktop")) {
+				/* Invocation of home.getParent() may return null */
+				return new File(home.getParent());
+			}
+
+			return home;
 		}
 
 		@Override
@@ -235,10 +259,78 @@ public interface FileSystemService extends FileSystemServiceApi,
 		}
 
 		@Override
+		public Byte[] read(File from)
+		{
+			int size = (int) from.length();
+			int offset = 0;
+			byte[] buffer = new byte[size];
+
+			try (InputStream in = new FileInputStream(from)) {
+				while (size > 0 && in.available() > 0) {
+					int bytesRead = in.read(buffer, offset, size);
+					if (bytesRead == -1) {
+						break;
+					}
+
+					size -= bytesRead;
+					offset += bytesRead;
+				}
+
+				return box(buffer);
+			}
+			catch (RuntimeException err) {
+				throw err;
+			}
+			catch (Throwable err) {
+				throw new RuntimeException(err);
+			}
+		}
+
+		@Override
+		public FileSystemService save(File to, String content, Boolean append)
+		{
+			try (FileOutputStream out = new FileOutputStream(to, append)) {
+				out.write(content.getBytes());
+			}
+			catch (RuntimeException err) {
+				throw err;
+			}
+			catch (Throwable err) {
+				throw new RuntimeException(err);
+			}
+
+			return this;
+		}
+
+		@Override
+		public Boolean setExecutable(File f, Boolean executable, Boolean globally)
+		{
+			return f.setExecutable(executable, !globally);
+		}
+
+		@Override
+		public Boolean setReadable(File f, Boolean readable, Boolean globally)
+		{
+			return f.setReadable(readable, !globally);
+		}
+
+		@Override
 		public FileSystemService setResourcePrefix(String prefix)
 		{
 			dynamicPrefix = prefix;
 			return this;
+		}
+
+		@Override
+		public Boolean setWritable(File f, Boolean writable, Boolean globally)
+		{
+			return f.setWritable(writable, !globally);
+		}
+
+
+		public static class Config
+		{
+			public static Integer chunkSize = 128;
 		}
 	}
 

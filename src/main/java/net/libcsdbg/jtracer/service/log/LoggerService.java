@@ -25,20 +25,20 @@ public interface LoggerService extends LoggerServiceApi,
 
 		protected static LogLevel translateLogLevel(Level level)
 		{
-			switch (level.name()) {
-			case "DEBUG":
+			switch (level.name().toLowerCase()) {
+			case "debug":
 				return LogLevel.debug;
 
-			case "ERROR":
+			case "error":
 				return LogLevel.error;
 
-			case "INFO":
+			case "info":
 				return LogLevel.info;
 
-			case "TRACE":
+			case "trace":
 				return LogLevel.trace;
 
-			case "WARN":
+			case "warn":
 				return LogLevel.warning;
 
 			default:
@@ -175,7 +175,7 @@ public interface LoggerService extends LoggerServiceApi,
 			}
 
 			dynamicLogLevel().set(LogLevel.values()[ordinal]);
-			debug(getClass(), "LoggerService '" + identity().get() + "' current log level -> " + dynamicLogLevel().get().name());
+			debug(getClass(), identity().get() + " current log level -> " + dynamicLogLevel().get().name());
 			return true;
 		}
 
@@ -188,7 +188,7 @@ public interface LoggerService extends LoggerServiceApi,
 			}
 
 			dynamicLogLevel().set(LogLevel.values()[ordinal]);
-			debug(getClass(), "LoggerService '" + identity().get() + "' current log level -> " + dynamicLogLevel().get().name());
+			debug(getClass(), identity().get() + " current log level -> " + dynamicLogLevel().get().name());
 			return true;
 		}
 

@@ -1,19 +1,24 @@
 package net.libcsdbg.jtracer.core;
 
 import net.libcsdbg.jtracer.annotation.Factory;
-import net.libcsdbg.jtracer.component.*;
+import net.libcsdbg.jtracer.gui.component.*;
+import net.libcsdbg.jtracer.gui.container.*;
 import net.libcsdbg.jtracer.service.config.RegistryService;
 import net.libcsdbg.jtracer.service.graphics.ComponentService;
 import net.libcsdbg.jtracer.service.graphics.value.GridPresets;
 import net.libcsdbg.jtracer.service.log.LoggerService;
 import net.libcsdbg.jtracer.service.persistence.jar.JarService;
 import net.libcsdbg.jtracer.service.persistence.storage.FileSystemService;
+import net.libcsdbg.jtracer.service.persistence.tools.Filter;
+import net.libcsdbg.jtracer.service.persistence.tools.InstallerFileFilter;
 import net.libcsdbg.jtracer.service.text.DictionaryService;
 import net.libcsdbg.jtracer.service.text.parse.Token;
 import net.libcsdbg.jtracer.service.text.parse.Tokenizer;
 import net.libcsdbg.jtracer.service.util.UtilityService;
-import net.libcsdbg.jtracer.service.persistence.tools.FileFilter;
-import net.libcsdbg.jtracer.service.persistence.tools.Filter;
+import net.libcsdbg.jtracer.setup.Installer;
+import net.libcsdbg.jtracer.setup.PlatformInstaller;
+import net.libcsdbg.jtracer.setup.UnixLikeInstaller;
+import net.libcsdbg.jtracer.setup.WindowsInstaller;
 import org.qi4j.api.common.Visibility;
 import org.qi4j.bootstrap.*;
 
@@ -21,7 +26,7 @@ public class Assembler implements ApplicationAssembler
 {
 	protected ApplicationAssembly assembly;
 
-	protected ApplicationProperties properties;
+	protected final ApplicationProperties properties;
 
 
 	public Assembler(ApplicationProperties properties)
@@ -46,13 +51,15 @@ public class Assembler implements ApplicationAssembler
 		assembleLoggerService(module);
 		assembleRegistryService(module);
 		assembleComponentService(module);
-		assembleFileSystemService(module);
-		assembleJarService(module);
+		assemblePersistenceServices(module);
 		assembleUtilityService(module);
 		assembleDictionaryService(module);
 
 		module = layer.module("core");
 		assembleCoreObjects(module);
+
+		module = layer.module("setup");
+		assemblePlatformInstallers(module);
 
 		layer =
 			assembly.layer("gui")
@@ -87,8 +94,13 @@ public class Assembler implements ApplicationAssembler
 		               Desktop.class,
 		               InputField.class,
 		               LogPane.class,
+		               MenuBar.class,
 		               ProgressBar.class,
-		               TracePane.class)
+		               StatusBar.class,
+		               ToolBar.class,
+		               TracePane.class,
+		               TraceStatusBar.class,
+		               TraceToolBar.class)
 		      .visibleIn(Visibility.application);
 
 		return this;
@@ -98,15 +110,10 @@ public class Assembler implements ApplicationAssembler
 	{
 		module.objects(AboutDialog.class,
 		               Alert.class,
-		               InputPrompt.class,
 		               MainFrame.class,
-		               MenuBar.class,
+		               SearchPrompt.class,
 		               Session.class,
-		               SplashScreen.class,
-		               StatusBar.class,
-		               ToolBar.class,
-		               TraceStatusBar.class,
-		               TraceToolBar.class)
+		               SplashScreen.class)
 		      .visibleIn(Visibility.application);
 
 		return this;
@@ -138,18 +145,28 @@ public class Assembler implements ApplicationAssembler
 		return this;
 	}
 
-	protected Assembler assembleFileSystemService(ModuleAssembly module)
+	protected Assembler assembleLoggerService(ModuleAssembly module)
 	{
-		module.services(FileSystemService.class)
-		      .identifiedBy("File System Service")
+		module.services(LoggerService.class)
+		      .identifiedBy("Logger Service")
 		      .visibleIn(Visibility.application)
 		      .instantiateOnStartup();
 
 		return this;
 	}
 
-	protected Assembler assembleJarService(ModuleAssembly module)
+	protected Assembler assemblePersistenceServices(ModuleAssembly module)
 	{
+		module.transients(Filter.Mixin.class,
+		                  InstallerFileFilter.class)
+		      .withTypes(Filter.class)
+		      .visibleIn(Visibility.application);
+
+		module.services(FileSystemService.class)
+		      .identifiedBy("File System Service")
+		      .visibleIn(Visibility.application)
+		      .instantiateOnStartup();
+
 		module.services(JarService.class)
 		      .identifiedBy("Java Archive Service")
 		      .visibleIn(Visibility.application)
@@ -158,12 +175,13 @@ public class Assembler implements ApplicationAssembler
 		return this;
 	}
 
-	protected Assembler assembleLoggerService(ModuleAssembly module)
+	protected Assembler assemblePlatformInstallers(ModuleAssembly module)
 	{
-		module.services(LoggerService.class)
-		      .identifiedBy("Logger Service")
-		      .visibleIn(Visibility.application)
-		      .instantiateOnStartup();
+		module.transients(PlatformInstaller.Mixin.class,
+		                  UnixLikeInstaller.class,
+		                  WindowsInstaller.class)
+		      .withTypes(PlatformInstaller.class)
+		      .visibleIn(Visibility.application);
 
 		return this;
 	}
@@ -180,14 +198,6 @@ public class Assembler implements ApplicationAssembler
 
 	protected Assembler assembleUtilityService(ModuleAssembly module)
 	{
-		module.transients(FileFilter.class)
-		      .visibleIn(Visibility.application);
-
-		module.transients(Filter.class)
-		      .withMixins(FileFilter.class,
-		                  Filter.Mixin.class)
-		      .visibleIn(Visibility.application);
-
 		module.services(UtilityService.class)
 		      .identifiedBy("Utility Service")
 		      .visibleIn(Visibility.application)
